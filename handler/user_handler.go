@@ -3,7 +3,6 @@ package handler
 import (
 	"backend/domain"
 	"backend/service"
-
 	"strconv"
 	"time"
 
@@ -140,18 +139,17 @@ func (h *UserHandler) GetCurrentUser(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) UpdatePassword(c *fiber.Ctx) error {
-	id := c.Params("id")
+	userID := c.Locals("user_id")
+	if userID == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
 	var req domain.UpdatePasswordRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
-	parsedID, err := strconv.ParseUint(id, 10, 32)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID format"})
-	}
-
-	err = h.service.UpdatePassword(uint(parsedID), req)
+	err := h.service.UpdatePassword(userID.(uint), req)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -159,17 +157,21 @@ func (h *UserHandler) UpdatePassword(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Password updated successfully"})
 }
 
-// func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
-// 	email := c.Params("email")
-// 	var req domain.ResetPasswordRequest
-// 	if err := c.BodyParser(&req); err != nil {
-// 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-// 	}
+func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
+	userID := c.Locals("user_id")
+	if userID == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
 
-// 	err := h.service.ResetPassword(email, req.NewPassword)
-// 	if err != nil {
-// 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-// 	}
+	var req domain.UpdateProfileRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+	}
 
-// 	return c.JSON(fiber.Map{"message": "Password reset successfully"})
-// }
+	err := h.service.UpdateProfile(userID.(uint), req)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Profile updated successfully"})
+}

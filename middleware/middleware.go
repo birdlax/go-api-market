@@ -22,6 +22,7 @@ func JWTMiddleware(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid ID format"})
 	}
 	c.Locals("role", claims["role"])
+
 	return c.Next()
 }
 

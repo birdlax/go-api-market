@@ -16,6 +16,7 @@ type UserService interface {
 	Delete(id uint) error
 	GetAll() ([]domain.User, error)
 	UpdatePassword(id uint, req domain.UpdatePasswordRequest) error
+	UpdateProfile(id uint, req domain.UpdateProfileRequest) error
 }
 
 type userService struct {
@@ -118,6 +119,21 @@ func (s *userService) UpdatePassword(id uint, req domain.UpdatePasswordRequest) 
 		return err
 	}
 	user.Password = hashedPassword
+
+	if err := s.repo.Update(user); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *userService) UpdateProfile(id uint, req domain.UpdateProfileRequest) error {
+	user, err := s.repo.GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	user.Email = req.Email
+	user.Role = req.Role
 
 	if err := s.repo.Update(user); err != nil {
 		return err
