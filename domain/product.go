@@ -1,8 +1,8 @@
 package domain
 
-import ()
-
-import "time"
+import (
+	"time"
+)
 
 type Product struct {
 	ID          uint       `json:"id"`
@@ -18,5 +18,8 @@ type Product struct {
 }
 type ProductRepository interface {
 	Create(product Product) error
+	GetAllProduct() ([]Product, error)
+	GetProductByName(name string) (*Product, error)
+	UpdateProduct(product Product) error
 	Delete(id uint) error
 }

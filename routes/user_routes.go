@@ -24,5 +24,4 @@ func UserRoutes(app *fiber.App, userHandler *handler.UserHandler) {
 	users.Get("/me", userHandler.GetCurrentUser)
 	users.Put("/me/updateprofile", userHandler.UpdateProfile)
 	users.Post("/me/updatepassword", userHandler.UpdatePassword)
-
 }
