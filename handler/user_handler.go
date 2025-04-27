@@ -25,7 +25,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	if req.Role == "" {
 		req.Role = "user"
 	}
-	err := h.service.Register(req.Email, req.Password, req.Role)
+	err := h.service.Register(req.Email, req.Password, req.Role, req.FirstName, req.LastName)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}

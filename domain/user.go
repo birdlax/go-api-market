@@ -6,9 +6,11 @@ import (
 
 type User struct {
 	gorm.Model
-	Email    string `gorm:"unique;not null"`
-	Password string `gorm:"not null"`
-	Role     string `json:"role"`
+	FirstName *string `json:"first_name" gorm:"default:null"` // เปลี่ยนเป็น pointer
+	LastName  *string `json:"last_name" gorm:"default:null"`
+	Email     string  `gorm:"unique;not null"`
+	Password  string  `gorm:"not null"`
+	Role      string  `json:"role"`
 }
 
 type LoginRequest struct {

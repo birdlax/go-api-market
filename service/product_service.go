@@ -2,13 +2,16 @@ package service
 
 import (
 	"backend/domain"
+	"errors"
 )
 
 type ProductService interface {
-	Create(product domain.Product) error
+	CreateProduct(product domain.Product) error
+	CreateCategory(category domain.Category) error
 	GetAllProduct() ([]domain.Product, error)
 	UpdateProduct(product domain.Product) error
 	GetProductByName(name string) (*domain.Product, error)
+	GetProductByCategory(category string) (*domain.Product, error)
 	Delete(id uint) error
 }
 
@@ -20,8 +23,20 @@ func NewProductService(productRepository domain.ProductRepository) ProductServic
 	return &productServiceImpl{repo: productRepository}
 }
 
-func (s *productServiceImpl) Create(product domain.Product) error {
-	if err := s.repo.Create(product); err != nil {
+func (s *productServiceImpl) CreateProduct(product domain.Product) error {
+	existingProduct, err := s.repo.GetProductByNameAndCategoryID(product.Name, product.CategoryID)
+	if err != nil {
+		return err
+	}
+	if existingProduct != nil {
+		return errors.New("product already exists in this category")
+	}
+
+	return s.repo.Create(product)
+}
+
+func (s *productServiceImpl) CreateCategory(category domain.Category) error {
+	if err := s.repo.CreateCategory(category); err != nil {
 		return err
 	}
 	return nil
@@ -42,6 +57,13 @@ func (s *productServiceImpl) GetProductByName(name string) (*domain.Product, err
 	return product, nil
 }
 
+func (s *productServiceImpl) GetProductByCategory(category string) (*domain.Product, error) {
+	product, err := s.repo.GetProductByCategory(category)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
+}
 func (s *productServiceImpl) UpdateProduct(product domain.Product) error {
 	if err := s.repo.UpdateProduct(product); err != nil {
 		return err

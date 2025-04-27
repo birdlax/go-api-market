@@ -2,6 +2,8 @@ package repository
 
 import (
 	"backend/domain"
+	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -25,9 +27,24 @@ func (r *productRepositoryImpl) GetAllProduct() ([]domain.Product, error) {
 	return products, nil
 }
 
+func (r *productRepositoryImpl) CreateCategory(category domain.Category) error {
+	if err := r.db.Create(&category).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *productRepositoryImpl) GetProductByName(name string) (*domain.Product, error) {
 	var product domain.Product
 	if err := r.db.Where("name = ?", name).First(&product).Error; err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
+func (r *productRepositoryImpl) GetProductByCategory(category string) (*domain.Product, error) {
+	var product domain.Product
+	if err := r.db.Where("category = ?", category).First(&product).Error; err != nil {
 		return nil, err
 	}
 	return &product, nil
@@ -45,4 +62,18 @@ func (r *productRepositoryImpl) Delete(id uint) error {
 		return err
 	}
 	return nil
+}
+
+func (r *productRepositoryImpl) GetProductByNameAndCategoryID(name string, categoryID uint) (*domain.Product, error) {
+	var product domain.Product
+	err := r.db.Where("name = ? AND category_id = ?", name, categoryID).First(&product).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil // ไม่เจอสินค้า → ไม่ใช่ error
+	}
+	if err != nil {
+		return nil, err // error จริง ๆ เช่น DB ล่ม
+	}
+
+	return &product, nil
 }

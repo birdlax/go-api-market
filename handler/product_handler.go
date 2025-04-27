@@ -16,14 +16,18 @@ func NewProductHandler(service service.ProductService) *ProductHandler {
 	return &ProductHandler{service: service}
 }
 
-func (h *ProductHandler) Create(c *fiber.Ctx) error {
+func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	var product domain.Product
 	if err := c.BodyParser(&product); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
-	if err := h.service.Create(product); err != nil {
+	if product.CategoryID == 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "Category ID is required"})
+	}
+	if err := h.service.CreateProduct(product); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
+
 	return c.JSON(fiber.Map{"message": "Product created successfully"})
 }
 
@@ -74,4 +78,24 @@ func (h *ProductHandler) Delete(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(fiber.Map{"message": "Product deleted successfully"})
+}
+
+func (h *ProductHandler) CreateCategory(c *fiber.Ctx) error {
+	var category domain.Category
+	if err := c.BodyParser(&category); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+	}
+	if err := h.service.CreateCategory(category); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "Category created successfully"})
+}
+
+func (h *ProductHandler) GetproductByCategory(c *fiber.Ctx) error {
+	category := c.Params("category")
+	product, err := h.service.GetProductByCategory(category)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(product)
 }

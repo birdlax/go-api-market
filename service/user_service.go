@@ -8,7 +8,7 @@ import (
 )
 
 type UserService interface {
-	Register(email string, password string, role string) error
+	Register(email string, password string, role string, firstName, lastName *string) error
 	Login(req domain.LoginRequest) (*domain.LoginResponse, error)
 
 	GetByID(id uint) (*domain.User, error)
@@ -27,7 +27,8 @@ func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-func (s *userService) Register(email string, password string, role string) error {
+// ปรับ service ให้รับ FirstName และ LastName ด้วย
+func (s *userService) Register(email, password, role string, firstName *string, lastName *string) error {
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return err
@@ -37,10 +38,13 @@ func (s *userService) Register(email string, password string, role string) error
 	if err == nil && existingUser != nil {
 		return errors.New("user already exists")
 	}
+
 	user := &domain.User{
-		Email:    email,
-		Password: hashedPassword,
-		Role:     role,
+		Email:     email,
+		Password:  hashedPassword,
+		Role:      role,
+		FirstName: firstName,
+		LastName:  lastName,
 	}
 
 	return s.repo.Create(user)
