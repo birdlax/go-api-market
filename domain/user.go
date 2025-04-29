@@ -6,7 +6,7 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName *string `json:"first_name" gorm:"default:null"` // เปลี่ยนเป็น pointer
+	FirstName *string `json:"first_name" gorm:"default:null"`
 	LastName  *string `json:"last_name" gorm:"default:null"`
 	Email     string  `gorm:"unique;not null"`
 	Password  string  `gorm:"not null"`
@@ -23,8 +23,11 @@ type LoginResponse struct {
 	Token string        `json:"token"`
 }
 type UserResponse struct {
-	ID    uint   `json:"id"`
-	Email string `json:"email"`
+	ID        uint    `json:"id"`
+	Email     string  `json:"email"`
+	FirstName *string `json:"first_name,omitempty"`
+	LastName  *string `json:"last_name,omitempty"`
+	Role      string  `json:"role"`
 }
 
 type UpdateProfileRequest struct {

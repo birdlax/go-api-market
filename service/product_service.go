@@ -7,12 +7,15 @@ import (
 
 type ProductService interface {
 	CreateProduct(product domain.Product) error
-	CreateCategory(category domain.Category) error
 	GetAllProduct() ([]domain.Product, error)
+	GetAllProducts() ([]domain.Product, error)
 	UpdateProduct(product domain.Product) error
+	GetProductByID(id uint) (*domain.Product, error)
 	GetProductByName(name string) (*domain.Product, error)
-	GetProductByCategory(category string) (*domain.Product, error)
 	Delete(id uint) error
+
+	CreateCategory(category domain.Category) error
+	GetProductByCategory(category string) ([]domain.Product, error)
 }
 
 type productServiceImpl struct {
@@ -35,19 +38,28 @@ func (s *productServiceImpl) CreateProduct(product domain.Product) error {
 	return s.repo.Create(product)
 }
 
-func (s *productServiceImpl) CreateCategory(category domain.Category) error {
-	if err := s.repo.CreateCategory(category); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *productServiceImpl) GetAllProduct() ([]domain.Product, error) {
 	products, err := s.repo.GetAllProduct()
 	if err != nil {
 		return nil, err
 	}
 	return products, nil
+}
+
+func (s *productServiceImpl) GetAllProducts() ([]domain.Product, error) {
+	products, err := s.repo.GetAllProducts()
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
+}
+
+func (s *productServiceImpl) GetProductByID(id uint) (*domain.Product, error) {
+	product, err := s.repo.GetProductByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
 }
 func (s *productServiceImpl) GetProductByName(name string) (*domain.Product, error) {
 	product, err := s.repo.GetProductByName(name)
@@ -57,13 +69,6 @@ func (s *productServiceImpl) GetProductByName(name string) (*domain.Product, err
 	return product, nil
 }
 
-func (s *productServiceImpl) GetProductByCategory(category string) (*domain.Product, error) {
-	product, err := s.repo.GetProductByCategory(category)
-	if err != nil {
-		return nil, err
-	}
-	return product, nil
-}
 func (s *productServiceImpl) UpdateProduct(product domain.Product) error {
 	if err := s.repo.UpdateProduct(product); err != nil {
 		return err
@@ -77,4 +82,20 @@ func (s *productServiceImpl) Delete(id uint) error {
 		return err
 	}
 	return nil
+}
+
+// category service methods
+func (s *productServiceImpl) CreateCategory(category domain.Category) error {
+	if err := s.repo.CreateCategory(category); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *productServiceImpl) GetProductByCategory(category string) ([]domain.Product, error) {
+	products, err := s.repo.GetProductByCategory(category)
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
 }

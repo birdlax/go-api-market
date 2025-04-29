@@ -39,6 +39,27 @@ func (h *ProductHandler) GetAllProduct(c *fiber.Ctx) error {
 	return c.JSON(products)
 }
 
+func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
+	products, err := h.service.GetAllProducts()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(products)
+}
+
+func (h *ProductHandler) GetProductByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+	parsedID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID format"})
+	}
+	product, err := h.service.GetProductByID(uint(parsedID))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(product)
+}
+
 func (h *ProductHandler) GetproductByName(c *fiber.Ctx) error {
 	name := c.Params("name")
 	product, err := h.service.GetProductByName(name)
@@ -80,6 +101,7 @@ func (h *ProductHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Product deleted successfully"})
 }
 
+// Category Handlers
 func (h *ProductHandler) CreateCategory(c *fiber.Ctx) error {
 	var category domain.Category
 	if err := c.BodyParser(&category); err != nil {
@@ -93,9 +115,9 @@ func (h *ProductHandler) CreateCategory(c *fiber.Ctx) error {
 
 func (h *ProductHandler) GetproductByCategory(c *fiber.Ctx) error {
 	category := c.Params("category")
-	product, err := h.service.GetProductByCategory(category)
+	products, err := h.service.GetProductByCategory(category)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.JSON(product)
+	return c.JSON(products)
 }

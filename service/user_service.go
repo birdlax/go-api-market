@@ -11,7 +11,7 @@ type UserService interface {
 	Register(email string, password string, role string, firstName, lastName *string) error
 	Login(req domain.LoginRequest) (*domain.LoginResponse, error)
 
-	GetByID(id uint) (*domain.User, error)
+	GetByID(id uint) (*domain.UserResponse, error)
 	Update(user *domain.User) error
 	Delete(id uint) error
 	GetAll() ([]domain.User, error)
@@ -65,20 +65,27 @@ func (s *userService) Login(req domain.LoginRequest) (*domain.LoginResponse, err
 	}
 	user.Password = ""
 	return &domain.LoginResponse{
-		User: &domain.UserResponse{
-			ID:    user.ID,
-			Email: user.Email,
-		},
 		Token: token,
+		User: &domain.UserResponse{
+			ID:        user.ID,
+			Email:     user.Email,
+			FirstName: user.FirstName,
+		},
 	}, nil
 }
 
-func (s *userService) GetByID(id uint) (*domain.User, error) {
+func (s *userService) GetByID(id uint) (*domain.UserResponse, error) {
 	user, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	return &domain.UserResponse{
+		ID:        user.ID,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Role:      user.Role,
+	}, nil
 }
 
 func (s *userService) Update(user *domain.User) error {

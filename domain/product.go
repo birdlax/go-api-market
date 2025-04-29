@@ -23,11 +23,14 @@ type Product struct {
 
 type ProductRepository interface {
 	Create(product Product) error
-	CreateCategory(category Category) error
 	GetAllProduct() ([]Product, error)
+	GetProductByID(id uint) (*Product, error)
 	GetProductByName(name string) (*Product, error)
-	GetProductByCategory(category string) (*Product, error)
 	UpdateProduct(product Product) error
 	Delete(id uint) error
+
+	GetAllProducts() ([]Product, error)
+	CreateCategory(category Category) error
+	GetProductByCategory(category string) ([]Product, error)
 	GetProductByNameAndCategoryID(name string, categoryID uint) (*Product, error)
 }
