@@ -31,8 +31,10 @@ type UserResponse struct {
 }
 
 type UpdateProfileRequest struct {
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	FirstName *string `json:"first_name,omitempty"`
+	LastName  *string `json:"last_name,omitempty"`
+	Email     string  `json:"email"`
+	Role      string  `json:"role"`
 }
 
 type UpdatePasswordRequest struct {

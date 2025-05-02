@@ -12,7 +12,6 @@ type UserService interface {
 	Login(req domain.LoginRequest) (*domain.LoginResponse, error)
 
 	GetByID(id uint) (*domain.UserResponse, error)
-	Update(user *domain.User) error
 	Delete(id uint) error
 	GetAll() ([]domain.User, error)
 	UpdatePassword(id uint, req domain.UpdatePasswordRequest) error
@@ -88,18 +87,6 @@ func (s *userService) GetByID(id uint) (*domain.UserResponse, error) {
 	}, nil
 }
 
-func (s *userService) Update(user *domain.User) error {
-	hashedPassword, err := utils.HashPassword(user.Password)
-	if err != nil {
-		return err
-	}
-	user.Password = hashedPassword
-	if err := s.repo.Update(user); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *userService) Delete(id uint) error {
 	if err := s.repo.Delete(id); err != nil {
 		return err
@@ -143,8 +130,19 @@ func (s *userService) UpdateProfile(id uint, req domain.UpdateProfileRequest) er
 		return err
 	}
 
-	user.Email = req.Email
-	user.Role = req.Role
+	if req.Email != "" {
+		user.Email = req.Email
+	}
+	if req.Role != "" {
+		user.Role = req.Role
+	}
+	// Update FirstName and LastName if they are not nil
+	if req.FirstName != nil {
+		user.FirstName = req.FirstName
+	}
+	if req.LastName != nil {
+		user.LastName = req.LastName
+	}
 
 	if err := s.repo.Update(user); err != nil {
 		return err

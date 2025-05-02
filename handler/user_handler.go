@@ -72,20 +72,19 @@ func (h *UserHandler) GetByID(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
-func (h *UserHandler) Update(c *fiber.Ctx) error {
+func (h *UserHandler) UpdateProfilebyId(c *fiber.Ctx) error {
 	id := c.Params("id")
 	parsedID, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID format"})
 	}
-	var user domain.User
-	if err := c.BodyParser(&user); err != nil {
+
+	var req domain.UpdateProfileRequest
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
-	user.ID = uint(parsedID)
-
-	err = h.service.Update(&user)
+	err = h.service.UpdateProfile(uint(parsedID), req)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -169,7 +168,6 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
-
 	err := h.service.UpdateProfile(userID.(uint), req)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})

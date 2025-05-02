@@ -19,7 +19,8 @@ func UserRoutes(app *fiber.App, userHandler *handler.UserHandler) {
 	admin.Post("/me/updatepassword", userHandler.UpdatePassword)
 	admin.Get("/getall", userHandler.GetAll)
 	admin.Delete("/user/:id", userHandler.Delete)
-	admin.Put("/user/:id", userHandler.Update)
+	admin.Put("/user/:id", userHandler.UpdateProfilebyId)
+	admin.Get("/user/:id", userHandler.GetByID)
 
 	users := app.Group("/profile", middleware.JWTMiddleware)
 	users.Get("/me", userHandler.GetCurrentUser)
