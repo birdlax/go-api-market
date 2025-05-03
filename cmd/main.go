@@ -15,7 +15,7 @@ import (
 func main() {
 	app := fiber.New()
 	config.ConnectDatabase()
-	config.DB.AutoMigrate(&domain.User{}, &domain.Product{}, &domain.Order{}, domain.OrderItem{})
+	config.DB.AutoMigrate(&domain.User{}, &domain.Product{}, &domain.Order{}, &domain.OrderItem{})
 
 	utils.StartUserCountLogger(config.DB)
 
