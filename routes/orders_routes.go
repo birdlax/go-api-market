@@ -15,4 +15,5 @@ func OrderRoutes(app *fiber.App, orderHandler *handler.OrderHandler) {
 	app.Get("/order/:id", orderHandler.GetOrderByID)
 	app.Put("/order/:id", orderHandler.UpdateOrder)
 	app.Delete("/order/:id", orderHandler.DeleteOrder)
+	app.Put("/pay/:id", orderHandler.MarkOrderAsPaid)
 }

@@ -2,6 +2,7 @@ package domain
 
 import (
 	"gorm.io/gorm"
+	"time"
 )
 
 type Order struct {
@@ -9,7 +10,8 @@ type Order struct {
 	UserID     uint        `json:"user_id"`
 	TotalPrice float64     `json:"total_price"`
 	Status     string      `json:"status"`
-	OrderItems []OrderItem `json:"order_items" gorm:"foreignKey:OrderID"`
+	OrderItems []OrderItem `json:"order_items" gorm:"foreignKey:OrderID;constraint:OnDelete:CASCADE"`
+	PaidAt     *time.Time
 }
 
 type OrderItem struct {
@@ -22,7 +24,7 @@ type OrderItem struct {
 }
 
 type OrderRepository interface {
-	CreateWithTx(tx *gorm.DB, order Order) error
+	CreateWithTx(tx *gorm.DB, order *Order) error
 	BeginTx() *gorm.DB
 
 	GetProductByID(id uint) (*Product, error)

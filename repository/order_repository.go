@@ -17,8 +17,8 @@ func (r *orderRepositoryImpl) BeginTx() *gorm.DB {
 	return r.db.Begin()
 }
 
-func (r *orderRepositoryImpl) CreateWithTx(tx *gorm.DB, order domain.Order) error {
-	return tx.Create(&order).Error
+func (r *orderRepositoryImpl) CreateWithTx(tx *gorm.DB, order *domain.Order) error {
+	return tx.Create(order).Error
 }
 
 func (r *orderRepositoryImpl) GetProductByID(id uint) (*domain.Product, error) {
@@ -50,16 +50,23 @@ func (r *orderRepositoryImpl) GetOrderByID(id uint) (*domain.Order, error) {
 }
 
 func (r *orderRepositoryImpl) UpdateOrder(order domain.Order) (domain.Order, error) {
-	// 🔄 ลบ OrderItems เดิมก่อน
 	if err := r.db.Where("order_id = ?", order.ID).Delete(&domain.OrderItem{}).Error; err != nil {
 		return order, err
 	}
 
-	// 💾 Save พร้อม OrderItems ใหม่
 	err := r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(&order).Error
 	return order, err
 }
 
 func (r *orderRepositoryImpl) DeleteOrder(id uint) error {
-	return r.db.Delete(&domain.Order{}, id).Error
+	tx := r.db.Begin()
+	if err := tx.Where("order_id = ?", id).Delete(&domain.OrderItem{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Delete(&domain.Order{}, id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
 }

@@ -1,6 +1,6 @@
 # Go-Api-market
 
-ระบบ api ร้านค้าออนไลน์ โดยใช้ Golang Fiber gorm (DB PostgresSQL) 
+ระบบ api ร้านค้าออนไลน์ โดยใช้ Golang Fiber gorm (DB Postgres) 
 
 ## framework 
 Fiber 	github.com/gofiber/fiber/v2 v2.52.6 

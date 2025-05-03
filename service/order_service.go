@@ -3,6 +3,7 @@ package service
 import (
 	"backend/domain"
 	"fmt"
+	"time"
 )
 
 type OrderService interface {
@@ -11,6 +12,7 @@ type OrderService interface {
 	GetOrderByID(id uint) (domain.Order, error)
 	UpdateOrder(id uint, updated domain.Order) (domain.Order, error)
 	DeleteOrder(id uint) error
+	MarkOrderAsPaid(id uint) error
 }
 
 type orderServiceImpl struct {
@@ -23,7 +25,6 @@ func NewOrderService(repo domain.OrderRepository) OrderService {
 
 func (s *orderServiceImpl) CreateOrder(order domain.Order) (domain.Order, error) {
 	var totalPrice float64
-
 	tx := s.repo.BeginTx()
 
 	for i, item := range order.OrderItems {
@@ -58,7 +59,7 @@ func (s *orderServiceImpl) CreateOrder(order domain.Order) (domain.Order, error)
 	order.TotalPrice = totalPrice
 	order.Status = "pending"
 
-	if err := s.repo.CreateWithTx(tx, order); err != nil {
+	if err := s.repo.CreateWithTx(tx, &order); err != nil {
 		tx.Rollback()
 		return domain.Order{}, err
 	}
@@ -91,21 +92,55 @@ func (s *orderServiceImpl) UpdateOrder(id uint, updated domain.Order) (domain.Or
 	if order.Status == "paid" || order.Status == "shipped" {
 		return domain.Order{}, fmt.Errorf("cannot update order after payment or shipment")
 	}
-	if updated.TotalPrice <= 0 {
-		return domain.Order{}, fmt.Errorf("total price must be greater than 0")
-	}
+
 	if len(updated.OrderItems) == 0 {
 		return domain.Order{}, fmt.Errorf("order must contain at least one item")
 	}
+
+	var totalPrice float64
+	for _, item := range updated.OrderItems {
+		product, err := s.repo.GetProductByID(item.ProductID)
+		if err != nil {
+			return domain.Order{}, fmt.Errorf("product %d not found", item.ProductID)
+		}
+
+		// คำนวณราคาและตรวจสอบสต๊อกสินค้า
+		if product.Quantity < item.Quantity {
+			return domain.Order{}, fmt.Errorf("not enough stock for product %s", product.Name)
+		}
+
+		item.Price = product.Price * float64(item.Quantity)
+		totalPrice += item.Price
+	}
+
+	order.TotalPrice = totalPrice
+	order.OrderItems = updated.OrderItems
+
 	if updated.Status != "" {
 		order.Status = updated.Status
 	}
-	order.TotalPrice = updated.TotalPrice
-	order.OrderItems = updated.OrderItems
 
 	return s.repo.UpdateOrder(*order)
 }
 
 func (s *orderServiceImpl) DeleteOrder(id uint) error {
 	return s.repo.DeleteOrder(id)
+}
+
+func (s *orderServiceImpl) MarkOrderAsPaid(id uint) error {
+	order, err := s.repo.GetOrderByID(id)
+	if err != nil {
+		return err
+	}
+
+	if order.Status == "paid" {
+		return fmt.Errorf("order already paid")
+	}
+
+	now := time.Now()
+	order.Status = "paid"
+	order.PaidAt = &now
+
+	_, err = s.repo.UpdateOrder(*order)
+	return err
 }
