@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"backend/config" // เปลี่ยนเป็น path ที่ถูกต้องของคุณ
+	"backend/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 

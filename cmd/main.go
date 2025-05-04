@@ -2,7 +2,6 @@ package main
 
 import (
 	"backend/config"
-	"backend/domain"
 	"backend/handler"
 	"backend/repository"
 	"backend/routes"
@@ -15,7 +14,6 @@ import (
 func main() {
 	app := fiber.New()
 	config.ConnectDatabase()
-	config.DB.AutoMigrate(&domain.User{}, &domain.Product{}, &domain.Order{}, &domain.OrderItem{}, &domain.Cart{}, &domain.CartItem{})
 
 	utils.InitLogger()
 

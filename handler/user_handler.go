@@ -1,12 +1,12 @@
 package handler
 
 import (
+	"backend/config"
 	"backend/domain"
 	"backend/utils"
+	"github.com/gofiber/fiber/v2"
 	"strconv"
 	"time"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
@@ -65,7 +65,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		return c.Status(401).JSON(fiber.Map{"error": "Invalid credentials"})
 	}
 	c.Cookie(&fiber.Cookie{
-		Name:     "JWT",
+		Name:     config.JwtCookieName,
 		Value:    user.Token,
 		Expires:  time.Now().Add(time.Hour * 72),
 		HTTPOnly: true,
@@ -82,7 +82,7 @@ func (h *UserHandler) GetByID(c *fiber.Ctx) error {
 
 	parsedID, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		utils.Logger.Printf("[GetByID] invalid request: %v", err)
+		utils.Logger.Printf("[GetByID] Invalid ID format: %v", err)
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID format"})
 	}
 	utils.Logger.Printf("📥 [GetByID] Getting user with ID: %d", parsedID)
@@ -107,7 +107,7 @@ func (h *UserHandler) UpdateProfilebyId(c *fiber.Ctx) error {
 
 	var req domain.UpdateProfileRequest
 	if err := c.BodyParser(&req); err != nil {
-		utils.Logger.Printf("❌ [UpdateProfilebyId] to parse body: %v", err)
+		utils.Logger.Printf("❌ [UpdateProfilebyId] Invalid request: %v", err)
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
@@ -191,7 +191,7 @@ func (h *UserHandler) UpdatePassword(c *fiber.Ctx) error {
 
 	var req domain.UpdatePasswordRequest
 	if err := c.BodyParser(&req); err != nil {
-		utils.Logger.Printf("❌ [UpdatePassword] Passwords do not match for user ID %v", userID)
+		utils.Logger.Printf("❌ [UpdatePassword] Invalid request %v", err)
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
@@ -216,7 +216,7 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 
 	var req domain.UpdateProfileRequest
 	if err := c.BodyParser(&req); err != nil {
-		utils.Logger.Printf("❌ [UpdateProfile] Failed to parse request body for user ID %v: %v", userID, err)
+		utils.Logger.Printf("❌ [UpdateProfile] Invalid request : %v", err)
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 	if *req.FirstName == "" || *req.LastName == "" {
