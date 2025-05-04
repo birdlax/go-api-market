@@ -10,7 +10,7 @@ func OrderRoutes(app *fiber.App, orderHandler *handler.OrderHandler) {
 	app.Use(middleware.CORSMiddleware())
 
 	app.Use(middleware.JWTMiddleware)
-	app.Post("/order", orderHandler.CreateOrder)
+	// app.Post("/order", orderHandler.CreateOrder)
 	app.Get("/orders", orderHandler.GetAllOrders)
 	app.Get("/order/:id", orderHandler.GetOrderByID)
 	app.Put("/order/:id", orderHandler.UpdateOrder)

@@ -1,0 +1,38 @@
+2025/05/04 13:46:15 user_handler.go:76: 🔄 [GetByID] Start get user by ID
+2025/05/04 13:46:15 user_handler.go:84: 📥 [GetByID] Getting user with ID: 1
+2025/05/04 13:46:15 user_handler.go:88: ❌ [GetByID] User not found: record not found
+2025/05/04 13:46:22 user_handler.go:76: 🔄 [GetByID] Start get user by ID
+2025/05/04 13:46:22 user_handler.go:84: 📥 [GetByID] Getting user with ID: 2
+2025/05/04 13:46:22 user_handler.go:91: ✅ [GetByID] User ID 2 retrieved successfully
+2025/05/04 14:05:10 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:05:10 user_handler.go:29: ❌ [Register] First name and last name are required
+2025/05/04 14:05:14 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:05:14 user_handler.go:38: 📥 [Register] Registering user: zzzzz@gmail.com
+2025/05/04 14:05:15 user_handler.go:46: ✅ [Register] User zzzzz@gmail.com registered successfully
+2025/05/04 14:05:18 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:05:18 user_handler.go:29: ❌ [Register] First name and last name are required
+2025/05/04 14:39:22 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:39:22 user_handler.go:38: 📥 [Register] Registering user: zzzasdasdzz@gmail.com
+2025/05/04 14:39:22 user_handler.go:46: ✅ [Register] User zzzasdasdzz@gmail.com registered successfully
+2025/05/04 14:42:38 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:42:38 user_handler.go:35: ℹ️ [Register] Role not provided, defaulting to 'user'
+2025/05/04 14:42:38 user_handler.go:38: 📥 [Register] Registering user: asdasd@gmail.com
+2025/05/04 14:42:38 user_handler.go:42: ❌ [Register] Failed to register user asdasd@gmail.com: email, password, and role are required
+2025/05/04 14:42:43 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:42:43 user_handler.go:35: ℹ️ [Register] Role not provided, defaulting to 'user'
+2025/05/04 14:42:43 user_handler.go:38: 📥 [Register] Registering user: adsxxx@gmail.com
+2025/05/04 14:42:43 user_handler.go:42: ❌ [Register] Failed to register user adsxxx@gmail.com: email, password, and role are required
+2025/05/04 14:42:58 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:42:58 user_handler.go:38: 📥 [Register] Registering user: adsxxx@gmail.com
+2025/05/04 14:42:58 user_handler.go:42: ❌ [Register] Failed to register user adsxxx@gmail.com: email, password, and role are required
+2025/05/04 14:43:03 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:43:03 user_handler.go:38: 📥 [Register] Registering user: adsxxx@gmail.com
+2025/05/04 14:43:04 user_handler.go:46: ✅ [Register] User adsxxx@gmail.com registered successfully
+2025/05/04 14:43:08 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:43:08 user_handler.go:35: ℹ️ [Register] Role not provided, defaulting to 'user'
+2025/05/04 14:43:08 user_handler.go:38: 📥 [Register] Registering user: adsxxx@gmail.com
+2025/05/04 14:43:09 user_handler.go:42: ❌ [Register] Failed to register user adsxxx@gmail.com: user already exists
+2025/05/04 14:43:12 user_handler.go:21: 🔄 [Register] Start user registration
+2025/05/04 14:43:12 user_handler.go:35: ℹ️ [Register] Role not provided, defaulting to 'user'
+2025/05/04 14:43:12 user_handler.go:38: 📥 [Register] Registering user: aaa@gmail.com
+2025/05/04 14:43:13 user_handler.go:46: ✅ [Register] User aaa@gmail.com registered successfully

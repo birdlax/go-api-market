@@ -34,3 +34,16 @@ type ProductRepository interface {
 	GetProductByCategory(category string) ([]Product, error)
 	GetProductByNameAndCategoryID(name string, categoryID uint) (*Product, error)
 }
+
+type ProductService interface {
+	CreateProduct(product Product) error
+	GetAllProduct() ([]Product, error)
+	GetAllProducts() ([]Product, error)
+	UpdateProduct(product Product) error
+	GetProductByID(id uint) (*Product, error)
+	GetProductByName(name string) (*Product, error)
+	Delete(id uint) error
+
+	CreateCategory(category Category) error
+	GetProductByCategory(category string) ([]Product, error)
+}

@@ -59,3 +59,10 @@ go mod tidy
 
 cd cmd
 go run dev 
+
+
+## req cart 
+{
+  "product_id": xxx,
+  "quantity": xx
+}

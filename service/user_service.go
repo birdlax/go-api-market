@@ -2,32 +2,23 @@ package service
 
 import (
 	"backend/domain"
-	"backend/repository"
 	"backend/utils"
 	"errors"
+	"fmt"
 )
 
-type UserService interface {
-	Register(email string, password string, role string, firstName, lastName *string) error
-	Login(req domain.LoginRequest) (*domain.LoginResponse, error)
-
-	GetByID(id uint) (*domain.UserResponse, error)
-	Delete(id uint) error
-	GetAll() ([]domain.User, error)
-	UpdatePassword(id uint, req domain.UpdatePasswordRequest) error
-	UpdateProfile(id uint, req domain.UpdateProfileRequest) error
-}
-
 type userService struct {
-	repo repository.UserRepository
+	repo domain.UserRepository
 }
 
-func NewUserService(repo repository.UserRepository) UserService {
+func NewUserService(repo domain.UserRepository) domain.UserService {
 	return &userService{repo: repo}
 }
 
-// ปรับ service ให้รับ FirstName และ LastName ด้วย
 func (s *userService) Register(email, password, role string, firstName *string, lastName *string) error {
+	if email == "" || password == "" || role == "" {
+		return errors.New("email, password, and role are required")
+	}
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return err
@@ -127,7 +118,7 @@ func (s *userService) UpdatePassword(id uint, req domain.UpdatePasswordRequest) 
 func (s *userService) UpdateProfile(id uint, req domain.UpdateProfileRequest) error {
 	user, err := s.repo.GetByID(id)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get user: %w", err)
 	}
 
 	if req.Email != "" {
@@ -136,7 +127,7 @@ func (s *userService) UpdateProfile(id uint, req domain.UpdateProfileRequest) er
 	if req.Role != "" {
 		user.Role = req.Role
 	}
-	// Update FirstName and LastName if they are not nil
+
 	if req.FirstName != nil {
 		user.FirstName = req.FirstName
 	}
@@ -145,7 +136,7 @@ func (s *userService) UpdateProfile(id uint, req domain.UpdateProfileRequest) er
 	}
 
 	if err := s.repo.Update(user); err != nil {
-		return err
+		return fmt.Errorf("update user failed: %w", err)
 	}
 	return nil
 }

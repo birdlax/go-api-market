@@ -5,20 +5,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserRepository interface {
-	Create(user *domain.User) error
-	GetByEmail(email string) (*domain.User, error)
-	GetByID(id uint) (*domain.User, error)
-	Update(user *domain.User) error
-	Delete(id uint) error
-	GetAll() ([]domain.User, error)
-}
-
 type userRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
+func NewUserRepository(db *gorm.DB) domain.UserRepository {
 	return &userRepositoryImpl{db: db}
 }
 

@@ -5,24 +5,11 @@ import (
 	"errors"
 )
 
-type ProductService interface {
-	CreateProduct(product domain.Product) error
-	GetAllProduct() ([]domain.Product, error)
-	GetAllProducts() ([]domain.Product, error)
-	UpdateProduct(product domain.Product) error
-	GetProductByID(id uint) (*domain.Product, error)
-	GetProductByName(name string) (*domain.Product, error)
-	Delete(id uint) error
-
-	CreateCategory(category domain.Category) error
-	GetProductByCategory(category string) ([]domain.Product, error)
-}
-
 type productServiceImpl struct {
 	repo domain.ProductRepository
 }
 
-func NewProductService(productRepository domain.ProductRepository) ProductService {
+func NewProductService(productRepository domain.ProductRepository) domain.ProductService {
 	return &productServiceImpl{repo: productRepository}
 }
 

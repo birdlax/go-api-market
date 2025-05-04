@@ -6,20 +6,11 @@ import (
 	"time"
 )
 
-type OrderService interface {
-	CreateOrder(order domain.Order) (domain.Order, error)
-	GetAllOrders() ([]domain.Order, error)
-	GetOrderByID(id uint) (domain.Order, error)
-	UpdateOrder(id uint, updated domain.Order) (domain.Order, error)
-	DeleteOrder(id uint) error
-	MarkOrderAsPaid(id uint) error
-}
-
 type orderServiceImpl struct {
 	repo domain.OrderRepository
 }
 
-func NewOrderService(repo domain.OrderRepository) OrderService {
+func NewOrderService(repo domain.OrderRepository) domain.OrderService {
 	return &orderServiceImpl{repo: repo}
 }
 

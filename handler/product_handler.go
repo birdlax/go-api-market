@@ -2,17 +2,16 @@ package handler
 
 import (
 	"backend/domain"
-	"backend/service"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type ProductHandler struct {
-	service service.ProductService
+	service domain.ProductService
 }
 
-func NewProductHandler(service service.ProductService) *ProductHandler {
+func NewProductHandler(service domain.ProductService) *ProductHandler {
 	return &ProductHandler{service: service}
 }
 

@@ -34,3 +34,12 @@ type OrderRepository interface {
 	UpdateOrder(order Order) (Order, error)
 	DeleteOrder(id uint) error
 }
+
+type OrderService interface {
+	CreateOrder(order Order) (Order, error)
+	GetAllOrders() ([]Order, error)
+	GetOrderByID(id uint) (Order, error)
+	UpdateOrder(id uint, updated Order) (Order, error)
+	DeleteOrder(id uint) error
+	MarkOrderAsPaid(id uint) error
+}

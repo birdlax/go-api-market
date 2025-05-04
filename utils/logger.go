@@ -2,22 +2,16 @@ package utils
 
 import (
 	"log"
-	"time"
-
-	"backend/domain"
-	"gorm.io/gorm"
+	"os"
 )
 
-func StartUserCountLogger(db *gorm.DB) {
-	go func() {
-		for {
-			var count int64
-			if err := db.Model(&domain.User{}).Count(&count).Error; err != nil {
-				log.Println("Error counting users:", err)
-			} else {
-				log.Println("Current user count:", count)
-			}
-			time.Sleep(10 * time.Second)
-		}
-	}()
+var Logger *log.Logger
+
+func InitLogger() {
+	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatalf("failed to open log file: %v", err)
+	}
+
+	Logger = log.New(file, "", log.Ldate|log.Ltime|log.Lshortfile)
 }

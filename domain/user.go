@@ -41,3 +41,23 @@ type UpdatePasswordRequest struct {
 	OldPassword string `json:"old_password"`
 	NewPassword string `json:"new_password"`
 }
+
+type UserRepository interface {
+	Create(user *User) error
+	GetByEmail(email string) (*User, error)
+	GetByID(id uint) (*User, error)
+	Update(user *User) error
+	Delete(id uint) error
+	GetAll() ([]User, error)
+}
+
+type UserService interface {
+	Register(email string, password string, role string, firstName, lastName *string) error
+	Login(req LoginRequest) (*LoginResponse, error)
+
+	GetByID(id uint) (*UserResponse, error)
+	Delete(id uint) error
+	GetAll() ([]User, error)
+	UpdatePassword(id uint, req UpdatePasswordRequest) error
+	UpdateProfile(id uint, req UpdateProfileRequest) error
+}

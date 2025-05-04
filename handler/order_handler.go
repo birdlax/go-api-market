@@ -2,45 +2,44 @@ package handler
 
 import (
 	"backend/domain"
-	"backend/service"
 	"github.com/gofiber/fiber/v2"
 	"strconv"
 )
 
 type OrderHandler struct {
-	service service.OrderService
+	service domain.OrderService
 }
 
-func NewOrderHandler(service service.OrderService) *OrderHandler {
+func NewOrderHandler(service domain.OrderService) *OrderHandler {
 	return &OrderHandler{service: service}
 
 }
 
-func (h *OrderHandler) CreateOrder(c *fiber.Ctx) error {
-	userID := c.Locals("user_id")
-	if userID == nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
+// func (h *OrderHandler) CreateOrder(c *fiber.Ctx) error {
+// 	userID := c.Locals("user_id")
+// 	if userID == nil {
+// 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+// 	}
 
-	var order domain.Order
-	if err := c.BodyParser(&order); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-	}
+// 	var order domain.Order
+// 	if err := c.BodyParser(&order); err != nil {
+// 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+// 	}
 
-	if len(order.OrderItems) == 0 {
-		return c.Status(400).JSON(fiber.Map{"error": "Order must have at least 1 item"})
-	}
-	order.UserID = userID.(uint)
-	order, err := h.service.CreateOrder(order)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.JSON(fiber.Map{
-		"message":  "Order created successfully",
-		"order_id": order.ID,
-	})
+// 	if len(order.OrderItems) == 0 {
+// 		return c.Status(400).JSON(fiber.Map{"error": "Order must have at least 1 item"})
+// 	}
+// 	order.UserID = userID.(uint)
+// 	order, err := h.service.CreateOrder(order)
+// 	if err != nil {
+// 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+// 	}
+// 	return c.JSON(fiber.Map{
+// 		"message":  "Order created successfully",
+// 		"order_id": order.ID,
+// 	})
 
-}
+// }
 
 func (h *OrderHandler) GetAllOrders(c *fiber.Ctx) error {
 	orders, err := h.service.GetAllOrders()
