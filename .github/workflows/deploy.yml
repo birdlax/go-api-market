@@ -18,13 +18,16 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H "${{ secrets.SERVER_IP }}" >> ~/.ssh/known_hosts
-
-    - name: Deploy to Server via SSH
+        ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+    - name: Deploy to Server
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          cd /go-api-market
-          git pull origin main
-          docker compose down
-          docker compose up -d --build
+        echo "Connecting to the server"
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          echo "Pulling the latest code from Git"
+          cd ~/go-api-market || exit 1
+          git pull origin master || exit 1
+          echo "Bringing down the containers"
+          sudo docker-compose down || exit 1
+          echo "Building and restarting the containers"
+          sudo docker-compose up -d --build || exit 1
         EOF
