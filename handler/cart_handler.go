@@ -90,3 +90,7 @@ func (h *CartHandler) Checkout(c *fiber.Ctx) error {
 	utils.Logger.Printf("Checkout: success - userID: %d", userID)
 	return c.JSON(fiber.Map{"message": "Checkout successful"})
 }
+
+func (h *CartHandler) GetHello(c *fiber.Ctx) error {
+	return c.JSON("Hello")
+}

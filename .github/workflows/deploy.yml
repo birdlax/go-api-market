@@ -3,7 +3,7 @@ name: Deploy to VM with Docker Compose
 on:
   push:
     branches:
-      - main  # หรือ master
+      - master  # หรือ master
 
 jobs:
   deploy:
