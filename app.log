@@ -1,0 +1,2 @@
+2025/05/05 15:33:56 order_handler.go:46: 🔄 [GetAllOrders] Start fetching all orders
+2025/05/05 15:33:56 order_handler.go:52: ✅ [GetAllOrders] Successfully fetched all orders
