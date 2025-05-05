@@ -13,5 +13,4 @@ func CartRoutes(app *fiber.App, cartHandler *handler.CartHandler) {
 	app.Delete("/cart/item/:product_id", cartHandler.RemoveItem)
 	app.Get("/cart", cartHandler.GetCart)
 	app.Post("/cart/checkout", cartHandler.Checkout)
-	app.Get("/gethello", cartHandler.GetHello)
 }

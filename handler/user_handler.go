@@ -232,3 +232,7 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	utils.Logger.Printf("✅ [UpdateProfile] Successfully updated profile for user ID %v", userID)
 	return c.JSON(fiber.Map{"message": "Profile updated successfully"})
 }
+
+func (h *UserHandler) GetHello(c *fiber.Ctx) error {
+	return c.SendString("Hello, World!")
+}

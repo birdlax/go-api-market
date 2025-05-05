@@ -12,6 +12,7 @@ func UserRoutes(app *fiber.App, userHandler *handler.UserHandler) {
 	app.Post("/login", userHandler.Login)
 	app.Post("/logout", userHandler.Logout)
 	app.Get("/user/:id", userHandler.GetByID)
+	app.Get("/gethello", userHandler.GetHello)
 
 	admin := app.Group("/admin", middleware.JWTMiddleware, middleware.AdminOnly)
 	admin.Get("/me", userHandler.GetCurrentUser)
