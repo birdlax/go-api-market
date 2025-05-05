@@ -234,5 +234,5 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) GetHello(c *fiber.Ctx) error {
-	return c.SendString("Hello, World!")
+	return c.SendString("Hello, Jeerapan!")
 }
