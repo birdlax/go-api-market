@@ -26,7 +26,7 @@ jobs:
           cd ~/go-api-market || exit 1
           git pull origin master || exit 1
           echo "Bringing down the containers"
-          sudo docker-compose down || exit 1
+          sudo docker compose down || exit 1
           echo "Building and restarting the containers"
-          sudo docker-compose up -d --build || exit 1
+          sudo docker compose up -d --build || exit 1
         EOF
