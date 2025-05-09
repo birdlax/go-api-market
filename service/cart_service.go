@@ -21,19 +21,6 @@ func (s *cartServiceImpl) AddItem(userID uint, item domain.CartItem) error {
 	}
 	item.Price = product.Price // คำนวณราคาสินค้า (ถ้าจำเป็น)
 
-	// ตรวจสอบว่ามีสินค้านี้ในตะกร้าหรือไม่
-	cart, err := s.repo.GetCartByUserID(userID)
-	if err != nil {
-		return err
-	}
-
-	for _, cartItem := range cart.CartItems {
-		if cartItem.ProductID == item.ProductID {
-			item.Quantity += cartItem.Quantity // เพิ่มจำนวนสินค้าในตะกร้า
-			break
-		}
-	}
-
 	return s.repo.AddOrUpdateCartItem(userID, item)
 }
 
@@ -42,7 +29,18 @@ func (s *cartServiceImpl) RemoveItem(userID, productID uint) error {
 }
 
 func (s *cartServiceImpl) GetCart(userID uint) (*domain.Cart, error) {
-	return s.repo.GetCartByUserID(userID)
+	cart, err := s.repo.GetCartByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var total float64
+	for _, item := range cart.CartItems {
+		total += float64(item.Quantity) * item.Product.Price
+	}
+	cart.Total = total
+
+	return cart, nil
 }
 
 func (s *cartServiceImpl) Checkout(userID uint) error {
@@ -86,4 +84,28 @@ func (s *cartServiceImpl) GetProductByID(productID uint) (domain.Product, error)
 		return domain.Product{}, err
 	}
 	return product, nil
+}
+
+func (s *cartServiceImpl) RemoveItemOne(userID uint, productID uint) error {
+	cart, err := s.repo.GetCartByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.DecrementCartItemQuantity(cart.ID, productID)
+}
+
+func (s *cartServiceImpl) AddOneItem(userID uint, productID uint) error {
+	product, err := s.repo.GetProductByID(productID)
+	if err != nil {
+		return err
+	}
+
+	item := domain.CartItem{
+		ProductID: productID,
+		Quantity:  1,
+		Price:     product.Price,
+	}
+
+	return s.repo.AddOrUpdateCartItem(userID, item)
 }

@@ -90,3 +90,41 @@ func (h *CartHandler) Checkout(c *fiber.Ctx) error {
 	utils.Logger.Printf("Checkout: success - userID: %d", userID)
 	return c.JSON(fiber.Map{"message": "Checkout successful"})
 }
+
+func (h *CartHandler) RemoveItemOne(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+
+	productIDParam := c.Params("product_id")
+	productID, err := strconv.ParseUint(productIDParam, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
+	}
+
+	err = h.service.RemoveItemOne(userID, uint(productID))
+	if err != nil {
+		utils.Logger.Printf("RemoveItem: failed - userID: %d, productID: %d, error: %v", userID, productID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	utils.Logger.Printf("RemoveItem: success - userID: %d, productID: %d", userID, productID)
+	return c.JSON(fiber.Map{"message": "Item removed successfully"})
+}
+
+func (h *CartHandler) AddOneItem(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+
+	productIDParam := c.Params("product_id")
+	productID, err := strconv.ParseUint(productIDParam, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
+	}
+
+	err = h.service.AddOneItem(userID, uint(productID))
+	if err != nil {
+		utils.Logger.Printf("AddOneItem: failed - userID: %d, productID: %d, error: %v", userID, productID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	utils.Logger.Printf("AddOneItem: success - userID: %d, productID: %d", userID, productID)
+	return c.JSON(fiber.Map{"message": "Item quantity increased"})
+}

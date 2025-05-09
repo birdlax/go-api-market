@@ -6,6 +6,7 @@ type Cart struct {
 	gorm.Model
 	UserID    uint       `json:"user_id"`
 	CartItems []CartItem `json:"cart_items" gorm:"foreignKey:CartID;constraint:OnDelete:CASCADE"`
+	Total     float64    `gorm:"-"`
 }
 
 type CartItem struct {
@@ -29,6 +30,7 @@ type CartRepository interface {
 	RemoveCartItem(userID, productID uint) error
 	ClearCart(userID uint) error
 	GetProductByID(productID uint) (Product, error)
+	DecrementCartItemQuantity(cartID uint, productID uint) error
 }
 
 // Service Interface
@@ -38,4 +40,6 @@ type CartService interface {
 	GetCart(userID uint) (*Cart, error)
 	Checkout(userID uint) error
 	GetProductByID(productID uint) (Product, error)
+	RemoveItemOne(userID uint, productID uint) error
+	AddOneItem(userID uint, productID uint) error
 }

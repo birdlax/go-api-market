@@ -15,7 +15,14 @@ func NewCartRepository(db *gorm.DB) domain.CartRepository {
 
 func (r *cartRepositoryImpl) GetCartByUserID(userID uint) (*domain.Cart, error) {
 	var cart domain.Cart
-	err := r.db.Preload("CartItems.Product").Where("user_id = ?", userID).FirstOrCreate(&cart, domain.Cart{UserID: userID}).Error
+	err := r.db.
+		Preload("CartItems", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at ASC") // หรือ "created_at ASC" ถ้ามี timestamp
+		}).
+		Preload("CartItems.Product").
+		Where("user_id = ?", userID).
+		FirstOrCreate(&cart, domain.Cart{UserID: userID}).Error
+
 	return &cart, err
 }
 
@@ -60,4 +67,20 @@ func (r *cartRepositoryImpl) GetProductByID(productID uint) (domain.Product, err
 	var product domain.Product
 	err := r.db.First(&product, productID).Error
 	return product, err
+}
+
+func (r *cartRepositoryImpl) DecrementCartItemQuantity(cartID uint, productID uint) error {
+	var item domain.CartItem
+	err := r.db.Where("cart_id = ? AND product_id = ?", cartID, productID).First(&item).Error
+	if err != nil {
+		return err // สินค้าไม่มีในตะกร้า
+	}
+
+	if item.Quantity > 1 {
+		item.Quantity -= 1
+		return r.db.Save(&item).Error
+	} else {
+		// ถ้าจำนวนเหลือ 1 แล้วลบ => ลบรายการออกจากตะกร้า
+		return r.db.Delete(&item).Error
+	}
 }
