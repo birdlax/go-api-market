@@ -60,6 +60,7 @@ func (s *userService) Login(req domain.LoginRequest) (*domain.LoginResponse, err
 			ID:        user.ID,
 			Email:     user.Email,
 			FirstName: user.FirstName,
+			Role:      user.Role,
 		},
 	}, nil
 }
@@ -69,12 +70,31 @@ func (s *userService) GetByID(id uint) (*domain.UserResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var defaultAddr *domain.AddressResponse
+	for _, a := range user.Addresses {
+		if a.IsDefault {
+			defaultAddr = &domain.AddressResponse{
+				ID:        a.ID,
+				Line1:     a.Line1,
+				Line2:     a.Line2,
+				City:      a.City,
+				Province:  a.Province,
+				ZipCode:   a.ZipCode,
+				Country:   a.Country,
+				IsDefault: a.IsDefault,
+			}
+			break
+		}
+	}
+
 	return &domain.UserResponse{
-		ID:        user.ID,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Role:      user.Role,
+		ID:             user.ID,
+		Email:          user.Email,
+		FirstName:      user.FirstName,
+		LastName:       user.LastName,
+		Role:           user.Role,
+		DefaultAddress: defaultAddr,
 	}, nil
 }
 

@@ -69,8 +69,9 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		Value:    user.Token,
 		Expires:  time.Now().Add(time.Hour * 72),
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   false,
 		SameSite: "Lax",
+		Path:     "/",
 	})
 	utils.Logger.Printf("✅ [Login] User %s logged in successfully", req.Email)
 	return c.JSON(user)

@@ -44,6 +44,7 @@ func ConnectDatabase() {
 		&domain.OrderItem{},
 		&domain.Cart{},
 		&domain.CartItem{},
+		&domain.Address{},
 	)
 	if err != nil {
 		log.Fatal("❌ Failed to migrate:", err)

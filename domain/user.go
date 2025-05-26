@@ -6,11 +6,21 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName *string `json:"first_name" gorm:"default:null"`
-	LastName  *string `json:"last_name" gorm:"default:null"`
-	Email     string  `gorm:"unique;not null"`
-	Password  string  `gorm:"not null"`
-	Role      string  `json:"role"`
+	FirstName *string   `json:"first_name" gorm:"default:null"`
+	LastName  *string   `json:"last_name" gorm:"default:null"`
+	Email     string    `gorm:"unique;not null"`
+	Password  string    `gorm:"not null"`
+	Role      string    `json:"role"`
+	Addresses []Address `gorm:"foreignKey:UserID"`
+}
+
+type UserResponse struct {
+	ID             uint             `json:"id"`
+	Email          string           `json:"email"`
+	FirstName      *string          `json:"first_name"`
+	LastName       *string          `json:"last_name"`
+	Role           string           `json:"role"`
+	DefaultAddress *AddressResponse `json:"default_address,omitempty"`
 }
 
 type LoginRequest struct {
@@ -21,13 +31,6 @@ type LoginRequest struct {
 type LoginResponse struct {
 	User  *UserResponse `json:"user"`
 	Token string        `json:"token"`
-}
-type UserResponse struct {
-	ID        uint    `json:"id"`
-	Email     string  `json:"email"`
-	FirstName *string `json:"first_name,omitempty"`
-	LastName  *string `json:"last_name,omitempty"`
-	Role      string  `json:"role"`
 }
 
 type UpdateProfileRequest struct {
@@ -54,7 +57,6 @@ type UserRepository interface {
 type UserService interface {
 	Register(email string, password string, role string, firstName, lastName *string) error
 	Login(req LoginRequest) (*LoginResponse, error)
-
 	GetByID(id uint) (*UserResponse, error)
 	Delete(id uint) error
 	GetAll() ([]User, error)

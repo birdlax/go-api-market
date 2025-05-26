@@ -27,7 +27,9 @@ func (r *userRepositoryImpl) GetByEmail(email string) (*domain.User, error) {
 
 func (r *userRepositoryImpl) GetByID(id uint) (*domain.User, error) {
 	var user domain.User
-	if err := r.db.First(&user, id).Error; err != nil {
+	if err := r.db.
+		Preload("Addresses", "is_default = ?", true).
+		First(&user, id).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -51,4 +53,16 @@ func (r *userRepositoryImpl) GetAll() ([]domain.User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (r *userRepositoryImpl) GetDefaultAddress(userID uint) (*domain.Address, error) {
+	var address domain.Address
+	err := r.db.
+		Where("user_id = ? AND is_default = ?", userID, true).
+		First(&address).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return &address, nil
 }

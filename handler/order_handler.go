@@ -16,31 +16,35 @@ func NewOrderHandler(service domain.OrderService) *OrderHandler {
 
 }
 
-// func (h *OrderHandler) CreateOrder(c *fiber.Ctx) error {
-// 	userID := c.Locals("user_id")
-// 	if userID == nil {
-// 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-// 	}
+func (h *OrderHandler) GetOrder(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
 
-// 	var order domain.Order
-// 	if err := c.BodyParser(&order); err != nil {
-// 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-// 	}
+	utils.Logger.Println("🔄 [GetAllOrders] Start fetching unpaid orders for user")
 
-// 	if len(order.OrderItems) == 0 {
-// 		return c.Status(400).JSON(fiber.Map{"error": "Order must have at least 1 item"})
-// 	}
-// 	order.UserID = userID.(uint)
-// 	order, err := h.service.CreateOrder(order)
-// 	if err != nil {
-// 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-// 	}
-// 	return c.JSON(fiber.Map{
-// 		"message":  "Order created successfully",
-// 		"order_id": order.ID,
-// 	})
+	orders, err := h.service.GetUnpaidOrdersByUserID(userID)
+	if err != nil {
+		utils.Logger.Printf("❌ [GetAllOrders] Failed to fetch unpaid orders: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
 
-// }
+	utils.Logger.Println("✅ [GetAllOrders] Successfully fetched unpaid orders")
+	return c.JSON(orders)
+}
+func (h *OrderHandler) GetOrdersByStatus(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	status := c.Query("status", "") // รับ status จาก query string เช่น ?status=pending
+
+	utils.Logger.Printf("🔄 [GetOrdersByStatus] Fetching orders with status '%s'", status)
+
+	orders, err := h.service.GetOrdersByUserIDAndStatus(userID, status)
+	if err != nil {
+		utils.Logger.Printf("❌ [GetOrdersByStatus] Failed to fetch orders: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	utils.Logger.Println("✅ [GetOrdersByStatus] Successfully fetched orders")
+	return c.JSON(orders)
+}
 
 func (h *OrderHandler) GetAllOrders(c *fiber.Ctx) error {
 	utils.Logger.Println("🔄 [GetAllOrders] Start fetching all orders")
@@ -138,21 +142,47 @@ func (h *OrderHandler) DeleteOrder(c *fiber.Ctx) error {
 }
 
 func (h *OrderHandler) MarkOrderAsPaid(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	utils.Logger.Printf("🔄 [MarkOrderAsPaid] Start marking order ID: %s as paid", idParam)
-	idUint64, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		utils.Logger.Printf("❌ [MarkOrderAsPaid] Invalid order ID format: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid order ID"})
+	// ดึง userID จาก context
+	userIDValue := c.Locals("user_id")
+	userID, ok := userIDValue.(uint)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user ID"})
 	}
-	id := uint(idUint64)
 
-	err = h.service.MarkOrderAsPaid(id)
+	utils.Logger.Printf("🔄 [MarkOrderAsPaid] Start marking order for user ID: %d as paid", userID)
+
+	err := h.service.MarkOrderAsPaidByUserID(userID)
 	if err != nil {
-		utils.Logger.Printf("❌ [MarkOrderAsPaid] Failed to mark order ID %d as paid: %v", id, err)
+		utils.Logger.Printf("❌ [MarkOrderAsPaid] Failed to mark order as paid for user %d: %v", userID, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	utils.Logger.Printf("✅ [MarkOrderAsPaid] Successfully marked order ID %d as paid", id)
+	utils.Logger.Printf("✅ [MarkOrderAsPaid] Successfully marked order as paid for user %d", userID)
 	return c.JSON(fiber.Map{"message": "Order marked as paid"})
+}
+
+func (h *OrderHandler) CancelOrder(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+
+	utils.Logger.Printf("🔄 [CancelOrder] User %d requested to cancel order", userID)
+
+	err := h.service.CancelOrderByUserID(userID)
+	if err != nil {
+		utils.Logger.Printf("❌ [CancelOrder] Failed: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	utils.Logger.Printf("✅ [CancelOrder] Successfully canceled order for user %d", userID)
+	return c.JSON(fiber.Map{"message": "Order canceled successfully"})
+}
+
+func (h *OrderHandler) GetRevenueByCategory(c *fiber.Ctx) error {
+	status := c.Query("status")
+	results, err := h.service.GetRevenueByCategory(status)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.JSON(results)
 }

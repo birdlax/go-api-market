@@ -79,18 +79,6 @@ func (h *CartHandler) GetCart(c *fiber.Ctx) error {
 	return c.JSON(cart)
 }
 
-func (h *CartHandler) Checkout(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(uint)
-
-	if err := h.service.Checkout(userID); err != nil {
-		utils.Logger.Printf("Checkout: failed - userID: %d, error: %v", userID, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	utils.Logger.Printf("Checkout: success - userID: %d", userID)
-	return c.JSON(fiber.Map{"message": "Checkout successful"})
-}
-
 func (h *CartHandler) RemoveItemOne(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 
@@ -127,4 +115,16 @@ func (h *CartHandler) AddOneItem(c *fiber.Ctx) error {
 
 	utils.Logger.Printf("AddOneItem: success - userID: %d, productID: %d", userID, productID)
 	return c.JSON(fiber.Map{"message": "Item quantity increased"})
+}
+
+func (h *CartHandler) Checkout(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+
+	if err := h.service.Checkout(userID); err != nil {
+		utils.Logger.Printf("Checkout: failed - userID: %d, error: %v", userID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	utils.Logger.Printf("Checkout: success - userID: %d", userID)
+	return c.JSON(fiber.Map{"message": "Checkout successful"})
 }

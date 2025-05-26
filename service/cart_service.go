@@ -70,11 +70,6 @@ func (s *cartServiceImpl) Checkout(userID uint) error {
 		return err
 	}
 
-	// ล้างตะกร้า
-	if err := s.repo.ClearCart(userID); err != nil {
-		return err
-	}
-
 	return nil
 }
 

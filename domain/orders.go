@@ -12,6 +12,8 @@ type Order struct {
 	Status     string      `json:"status"`
 	OrderItems []OrderItem `json:"order_items" gorm:"foreignKey:OrderID;constraint:OnDelete:CASCADE"`
 	PaidAt     *time.Time
+	AddressID  uint
+	Address    Address `gorm:"foreignKey:AddressID"`
 }
 
 type OrderItem struct {
@@ -21,6 +23,11 @@ type OrderItem struct {
 	Product   Product `json:"product"`
 	Quantity  int     `json:"quantity"`
 	Price     float64 `json:"price"`
+}
+type RevenueResult struct {
+	CategoryName  string  `json:"category_name"`
+	TotalRevenue  float64 `json:"total_revenue"`
+	TotalQuantity int     `json:"total_quantity"`
 }
 
 type OrderRepository interface {
@@ -33,13 +40,23 @@ type OrderRepository interface {
 	UpdateProductStock(tx *gorm.DB, product *Product) error
 	UpdateOrder(order Order) (Order, error)
 	DeleteOrder(id uint) error
+	GetPendingOrderByUserID(userID uint) (Order, error)
+	UpdateOrderWithTx(tx *gorm.DB, order *Order) error
+	DeleteOrderItemsByOrderID(tx *gorm.DB, orderID uint) error
+	CreateOrderItems(tx *gorm.DB, items []OrderItem) error
+	GetOrdersByUserIDAndStatus(userID uint, status string) ([]Order, error)
+	GetRevenueByCategory(status string) ([]RevenueResult, error)
 }
 
 type OrderService interface {
 	CreateOrder(order Order) (Order, error)
 	GetAllOrders() ([]Order, error)
+	GetUnpaidOrdersByUserID(userID uint) ([]Order, error)
 	GetOrderByID(id uint) (Order, error)
 	UpdateOrder(id uint, updated Order) (Order, error)
 	DeleteOrder(id uint) error
-	MarkOrderAsPaid(id uint) error
+	MarkOrderAsPaidByUserID(userID uint) error
+	CancelOrderByUserID(userID uint) error
+	GetRevenueByCategory(status string) ([]RevenueResult, error)
+	GetOrdersByUserIDAndStatus(userID uint, status string) ([]Order, error)
 }
