@@ -23,6 +23,12 @@ type CartItemInput struct {
 	Quantity  int  `json:"quantity"`
 }
 
+type CheckoutRequest struct {
+	ShippingAddressID uint   `json:"shipping_address_id"`
+	BillingAddressID  uint   `json:"billing_address_id"`
+	PaymentMethod     string `json:"payment_method"`
+}
+
 // Repository Interface
 type CartRepository interface {
 	GetCartByUserID(userID uint) (*Cart, error)
@@ -38,8 +44,8 @@ type CartService interface {
 	AddItem(userID uint, item CartItem) error
 	RemoveItem(userID, productID uint) error
 	GetCart(userID uint) (*Cart, error)
-	Checkout(userID uint) error
 	GetProductByID(productID uint) (Product, error)
 	RemoveItemOne(userID uint, productID uint) error
 	AddOneItem(userID uint, productID uint) error
+	Checkout(userID uint, req CheckoutRequest) (*Order, error)
 }

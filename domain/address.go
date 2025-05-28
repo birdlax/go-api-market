@@ -5,35 +5,41 @@ import "gorm.io/gorm"
 
 type Address struct {
 	gorm.Model
-	UserID    uint   `json:"user_id" gorm:"not null"`
-	Line1     string `json:"line1"`
-	Line2     string `json:"line2"`
-	City      string `json:"city"`
-	Province  string `json:"province"`
-	ZipCode   string `json:"zip_code"`
-	Country   string `json:"country" gorm:"default:'Thailand'"`
-	IsDefault bool   `json:"is_default"`
+	UserID       uint   `json:"user_id" gorm:"not null"`
+	FullName     string `json:"full_name"`
+	Phone        string `json:"phone"`
+	AddressLine1 string `json:"addressLine1"`
+	AddressLine2 string `json:"addressLine2"`
+	City         string `json:"city"`
+	Province     string `json:"province"`
+	ZipCode      string `json:"zip_code"`
+	Country      string `json:"country" gorm:"default:'Thailand'"`
+	IsDefault    bool   `json:"is_default"`
 }
 
 type AddressRequest struct {
-	Line1     string `json:"line1"`
-	Line2     string `json:"line2"`
-	City      string `json:"city"`
-	Province  string `json:"province"`
-	ZipCode   string `json:"zip_code"`
-	Country   string `json:"country"`
-	IsDefault bool   `json:"is_default"`
+	FullName     string `json:"full_name"`
+	Phone        string `json:"phone"`
+	AddressLine1 string `json:"addressLine1"`
+	AddressLine2 string `json:"addressLine2"`
+	City         string `json:"city"`
+	Province     string `json:"province"`
+	ZipCode      string `json:"zip_code"`
+	Country      string `json:"country"`
+	IsDefault    bool   `json:"is_default"`
 }
 
 type AddressResponse struct {
-	ID        uint   `json:"id"`
-	Line1     string `json:"line1"`
-	Line2     string `json:"line2"`
-	City      string `json:"city"`
-	Province  string `json:"province"`
-	ZipCode   string `json:"zip_code"`
-	Country   string `json:"country"`
-	IsDefault bool   `json:"is_default"`
+	ID           uint   `json:"id"`
+	FullName     string `json:"full_name"`
+	Phone        string `json:"phone"`
+	AddressLine1 string `json:"addressLine1"`
+	AddressLine2 string `json:"addressLine2"`
+	City         string `json:"city"`
+	Province     string `json:"province"`
+	ZipCode      string `json:"zip_code"`
+	Country      string `json:"country"`
+	IsDefault    bool   `json:"is_default"`
 }
 
 type AddressRepository interface {
@@ -52,4 +58,6 @@ type AddressService interface {
 	UpdateAddress(addressID uint, req AddressRequest) error
 	DeleteAddress(addressID uint) error
 	GetAddressesByUserID(userID uint) ([]AddressResponse, error)
+	GetAddressByID(id uint) (*Address, error)
+	SwitchDefaultAddress(userID uint, addressID uint) error
 }

@@ -120,11 +120,28 @@ func (h *CartHandler) AddOneItem(c *fiber.Ctx) error {
 func (h *CartHandler) Checkout(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 
-	if err := h.service.Checkout(userID); err != nil {
-		utils.Logger.Printf("Checkout: failed - userID: %d, error: %v", userID, err)
+	var req domain.CheckoutRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	// Validate payment method
+	if req.PaymentMethod != "cod" && req.PaymentMethod != "bank_transfer" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid payment method",
+		})
+	}
+
+	order, err := h.service.Checkout(userID, req)
+	if err != nil {
+		utils.Logger.Printf("Checkout failed: userID=%d, error=%v", userID, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	utils.Logger.Printf("Checkout: success - userID: %d", userID)
-	return c.JSON(fiber.Map{"message": "Checkout successful"})
+	utils.Logger.Printf("Checkout success: userID=%d", userID)
+	return c.JSON(fiber.Map{
+		"message":  "Checkout successful",
+		"order_id": order.ID,
+	})
+
 }

@@ -41,18 +41,27 @@ func (s *userService) Register(email, password, role string, firstName *string, 
 }
 
 func (s *userService) Login(req domain.LoginRequest) (*domain.LoginResponse, error) {
+	utils.Logger.Printf("🔍 [Service] Login attempt for email: %s", req.Email)
+
 	user, err := s.repo.GetByEmail(req.Email)
 	if err != nil {
-		return nil, errors.New("user not found")
+		utils.Logger.Printf("❌ [Service] User not found: %s", req.Email)
+		return nil, utils.NewAppError(404, "User not found")
 	}
+
 	if !utils.CheckPasswordHash(req.Password, user.Password) {
-		return nil, errors.New("password is invalid")
+		utils.Logger.Printf("🔐 [Service] Invalid password for user: %s", req.Email)
+		return nil, utils.NewAppError(401, "Invalid password")
 	}
 
 	token, err := utils.GenerateToken(user.ID, user.Email, user.Role)
 	if err != nil {
-		return nil, errors.New("could not generate token")
+		utils.Logger.Printf("⚠️ [Service] Failed to generate token for user: %s, error: %v", req.Email, err)
+		return nil, utils.NewAppError(500, "Failed to generate token")
 	}
+
+	utils.Logger.Printf("✅ [Service] User %s authenticated successfully", req.Email)
+
 	user.Password = ""
 	return &domain.LoginResponse{
 		Token: token,
@@ -75,14 +84,16 @@ func (s *userService) GetByID(id uint) (*domain.UserResponse, error) {
 	for _, a := range user.Addresses {
 		if a.IsDefault {
 			defaultAddr = &domain.AddressResponse{
-				ID:        a.ID,
-				Line1:     a.Line1,
-				Line2:     a.Line2,
-				City:      a.City,
-				Province:  a.Province,
-				ZipCode:   a.ZipCode,
-				Country:   a.Country,
-				IsDefault: a.IsDefault,
+				ID:           a.ID,
+				FullName:     a.FullName,
+				Phone:        a.Phone,
+				AddressLine1: a.AddressLine1,
+				AddressLine2: a.AddressLine2,
+				City:         a.City,
+				Province:     a.Province,
+				ZipCode:      a.ZipCode,
+				Country:      a.Country,
+				IsDefault:    a.IsDefault,
 			}
 			break
 		}

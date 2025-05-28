@@ -190,18 +190,14 @@ func (s *orderServiceImpl) DeleteOrder(id uint) error {
 }
 
 func (s *orderServiceImpl) MarkOrderAsPaidByUserID(userID uint) error {
-	// ดึงคำสั่งซื้อที่ยังไม่ได้ชำระของผู้ใช้
 	order, err := s.repo.GetPendingOrderByUserID(userID)
 	if err != nil {
 		return fmt.Errorf("failed to get pending order: %w", err)
 	}
 
-	// ตรวจสอบว่าพบคำสั่งซื้อหรือไม่
 	if order.ID == 0 {
 		return fmt.Errorf("no pending order found for user")
 	}
-
-	// ตรวจสอบสถานะ
 	if order.Status == "paid" {
 		return fmt.Errorf("order already paid")
 	}
@@ -210,12 +206,10 @@ func (s *orderServiceImpl) MarkOrderAsPaidByUserID(userID uint) error {
 	order.Status = "paid"
 	order.PaidAt = &now
 
-	// อัพเดตสถานะคำสั่งซื้อ
 	if _, err := s.repo.UpdateOrder(order); err != nil {
 		return fmt.Errorf("failed to update order: %w", err)
 	}
 
-	// ล้างตะกร้าสินค้าของผู้ใช้
 	if err := s.cartRepo.ClearCart(order.UserID); err != nil {
 		return fmt.Errorf("failed to clear cart: %w", err)
 	}

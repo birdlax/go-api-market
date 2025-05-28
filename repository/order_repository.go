@@ -71,6 +71,7 @@ func (r *orderRepositoryImpl) GetOrderByID(id uint) (*domain.Order, error) {
 			return db.Unscoped()
 		}).
 		Preload("OrderItems.Product").
+		Preload("Address").
 		First(&order, id).Error; err != nil {
 		return nil, err
 	}

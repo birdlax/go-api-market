@@ -48,22 +48,30 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
-	utils.Logger.Println("🔄 [Login] Start login process")
+	utils.Logger.Println("🔄 [Handler] Start login process")
 
 	var req domain.User
 	if err := c.BodyParser(&req); err != nil {
-		utils.Logger.Printf("[Login] invalid request: %v", err)
+		utils.Logger.Printf("❌ [Handler] Invalid request format: %v", err)
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
-	utils.Logger.Printf("📥 [Login] Attempting login for email: %s", req.Email)
+
+	utils.Logger.Printf("📥 [Handler] Login request received for email: %s", req.Email)
+
 	user, err := h.service.Login(domain.LoginRequest{
 		Email:    req.Email,
 		Password: req.Password,
 	})
+
 	if err != nil {
-		utils.Logger.Printf("❌ [Login] Invalid credentials for email: %s", req.Email)
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid credentials"})
+		if appErr, ok := utils.AsAppError(err); ok {
+			utils.Logger.Printf("❗ [Handler] Login error: %s - %s", req.Email, appErr.Message)
+			return c.Status(appErr.Code).JSON(fiber.Map{"error": appErr.Message})
+		}
+		utils.Logger.Printf("🔥 [Handler] Unexpected error for email %s: %v", req.Email, err)
+		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error"})
 	}
+
 	c.Cookie(&fiber.Cookie{
 		Name:     config.JwtCookieName,
 		Value:    user.Token,
@@ -73,7 +81,8 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		SameSite: "Lax",
 		Path:     "/",
 	})
-	utils.Logger.Printf("✅ [Login] User %s logged in successfully", req.Email)
+
+	utils.Logger.Printf("🎉 [Handler] User %s logged in successfully", req.Email)
 	return c.JSON(user)
 }
 

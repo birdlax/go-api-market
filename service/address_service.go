@@ -48,13 +48,15 @@ func (s *addressServiceImpl) UpdateAddress(addressID uint, req domain.AddressReq
 	}
 
 	updated := domain.Address{
-		Line1:     req.Line1,
-		Line2:     req.Line2,
-		City:      req.City,
-		Province:  req.Province,
-		ZipCode:   req.ZipCode,
-		Country:   req.Country,
-		IsDefault: req.IsDefault,
+		FullName:     req.FullName,
+		Phone:        req.Phone,
+		AddressLine1: req.AddressLine1,
+		AddressLine2: req.AddressLine2,
+		City:         req.City,
+		Province:     req.Province,
+		ZipCode:      req.ZipCode,
+		Country:      req.Country,
+		IsDefault:    req.IsDefault,
 	}
 
 	return s.repo.UpdateAddress(addressID, updated)
@@ -92,15 +94,46 @@ func (s *addressServiceImpl) GetAddressesByUserID(userID uint) ([]domain.Address
 	var res []domain.AddressResponse
 	for _, addr := range addresses {
 		res = append(res, domain.AddressResponse{
-			ID:        addr.ID,
-			Line1:     addr.Line1,
-			Line2:     addr.Line2,
-			City:      addr.City,
-			Province:  addr.Province,
-			ZipCode:   addr.ZipCode,
-			Country:   addr.Country,
-			IsDefault: addr.IsDefault,
+			ID:           addr.ID,
+			FullName:     addr.FullName,
+			Phone:        addr.Phone,
+			AddressLine1: addr.AddressLine1,
+			AddressLine2: addr.AddressLine2,
+			City:         addr.City,
+			Province:     addr.Province,
+			ZipCode:      addr.ZipCode,
+			Country:      addr.Country,
+			IsDefault:    addr.IsDefault,
 		})
 	}
 	return res, nil
+}
+
+func (s *addressServiceImpl) GetAddressByID(id uint) (*domain.Address, error) {
+	return s.repo.GetAddressByID(id)
+}
+func (s *addressServiceImpl) SwitchDefaultAddress(userID uint, addressID uint) error {
+	// ตรวจสอบว่า Address เป็นของ user นี้จริง
+	address, err := s.repo.GetAddressByID(addressID)
+	if err != nil {
+	}
+
+	if address.UserID != userID {
+
+	}
+
+	// ตั้งค่า Address อื่นๆ ของ user นี้ให้ IsDefault = false
+	err = s.repo.UnsetDefaultAddress(userID)
+	if err != nil {
+		return err
+	}
+
+	// ตั้ง address นี้ให้เป็น default
+	address.IsDefault = true
+	err = s.repo.UpdateAddress(address.ID, *address)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

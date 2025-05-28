@@ -13,7 +13,9 @@ func AddressRouter(app *fiber.App, addressHandler *handler.AddressHandler) {
 	addressGroup := app.Group("/api/addresses")
 	addressGroup.Post("/", addressHandler.CreateAddress)
 	addressGroup.Get("/", addressHandler.GetAddresses)
-	addressGroup.Put("/:id", addressHandler.UpdateAddress)
-	addressGroup.Delete("/:id", addressHandler.DeleteAddress)
+	addressGroup.Get("/:id", addressHandler.GetAddressByID)
+	addressGroup.Put("/update/:id", addressHandler.UpdateAddress)
+	addressGroup.Delete("/delete/:id", addressHandler.DeleteAddress)
+	addressGroup.Put("/default/:id", addressHandler.SwitchDefault)
 
 }

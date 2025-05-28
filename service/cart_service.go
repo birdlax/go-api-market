@@ -43,36 +43,6 @@ func (s *cartServiceImpl) GetCart(userID uint) (*domain.Cart, error) {
 	return cart, nil
 }
 
-func (s *cartServiceImpl) Checkout(userID uint) error {
-	cart, err := s.repo.GetCartByUserID(userID)
-	if err != nil {
-		return err
-	}
-	if len(cart.CartItems) == 0 {
-		return fmt.Errorf("cart is empty")
-	}
-
-	// เตรียม Order
-	order := domain.Order{
-		UserID:     userID,
-		OrderItems: make([]domain.OrderItem, len(cart.CartItems)),
-	}
-
-	for i, item := range cart.CartItems {
-		order.OrderItems[i] = domain.OrderItem{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
-		}
-	}
-
-	_, err = s.orderService.CreateOrder(order)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *cartServiceImpl) GetProductByID(productID uint) (domain.Product, error) {
 	product, err := s.repo.GetProductByID(productID)
 	if err != nil {
@@ -103,4 +73,39 @@ func (s *cartServiceImpl) AddOneItem(userID uint, productID uint) error {
 	}
 
 	return s.repo.AddOrUpdateCartItem(userID, item)
+}
+
+func (s *cartServiceImpl) Checkout(userID uint, req domain.CheckoutRequest) (*domain.Order, error) {
+	cart, err := s.repo.GetCartByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if len(cart.CartItems) == 0 {
+		return nil, fmt.Errorf("cart is empty")
+	}
+
+	order := domain.Order{
+		UserID:     userID,
+		AddressID:  req.ShippingAddressID,
+		Status:     "pending",
+		OrderItems: make([]domain.OrderItem, len(cart.CartItems)),
+	}
+
+	for i, item := range cart.CartItems {
+		order.OrderItems[i] = domain.OrderItem{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	order, err = s.orderService.CreateOrder(order)
+	if err != nil {
+		return nil, err
+	}
+	err = s.repo.ClearCart(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &order, nil
 }

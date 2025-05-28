@@ -32,10 +32,6 @@ func (r *addressRepositoryImpl) DeleteAddress(id uint) error {
 	return r.db.Delete(&domain.Address{}, id).Error
 }
 
-func (r *addressRepositoryImpl) UnsetDefaultAddress(userID uint) error {
-	return r.db.Model(&domain.Address{}).Where("user_id = ?", userID).Update("is_default", false).Error
-}
-
 // คืนค่า Address ล่าสุดของผู้ใช้ (ใช้ ID ล่าสุด หรือ CreatedAt ล่าสุด)
 func (r *addressRepositoryImpl) GetLatestAddressByUserID(userID uint) (*domain.Address, error) {
 	var address domain.Address
@@ -60,4 +56,8 @@ func (r *addressRepositoryImpl) GetAddressesByUserID(userID uint) ([]domain.Addr
 	var addresses []domain.Address
 	err := r.db.Where("user_id = ?", userID).Order("is_default DESC, id DESC").Find(&addresses).Error
 	return addresses, err
+}
+
+func (r *addressRepositoryImpl) UnsetDefaultAddress(userID uint) error {
+	return r.db.Model(&domain.Address{}).Where("user_id = ?", userID).Update("is_default", false).Error
 }
