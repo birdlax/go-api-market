@@ -3,8 +3,14 @@ package handler
 import (
 	"backend/domain"
 	"backend/utils"
-	"github.com/gofiber/fiber/v2"
+	"fmt"
+	"log"
+	"math"
+	"os"
 	"strconv"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type ProductHandler struct {
@@ -15,28 +21,68 @@ func NewProductHandler(service domain.ProductService) *ProductHandler {
 	return &ProductHandler{service: service}
 }
 
-func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
-	utils.Logger.Println("🔄 [CreateProduct] Start Create Product")
-
-	var product domain.Product
-	if err := c.BodyParser(&product); err != nil {
-		utils.Logger.Printf("❌ [CreateProduct] Failed to parse request body: %v", err)
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+func (h *ProductHandler) CreateMultipleProducts(c *fiber.Ctx) error {
+	form, err := c.MultipartForm()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid multipart form"})
 	}
 
-	if product.CategoryID == 0 {
-		utils.Logger.Println("❌ [CreateProduct] Missing Category ID in request")
-		return c.Status(400).JSON(fiber.Map{"error": "Category ID is required"})
+	products := []*domain.Product{}
+
+	names := form.Value["name"]
+	descriptions := form.Value["description"]
+	prices := form.Value["price"]
+	quantities := form.Value["quantity"]
+	categoryIDs := form.Value["category_id"]
+	files := form.File["images"] // ใช้ชื่อฟิลด์ "images" และอัปโหลดหลายไฟล์
+
+	for i := 0; i < len(names); i++ {
+		categoryID, _ := strconv.Atoi(categoryIDs[i])
+		price, _ := strconv.ParseFloat(prices[i], 64)
+		quantity, _ := strconv.Atoi(quantities[i])
+
+		product := &domain.Product{
+			Name:        names[i],
+			Description: descriptions[i],
+			CategoryID:  uint(categoryID),
+			Price:       price,
+			Quantity:    quantity,
+			Images:      []domain.ProductImage{},
+		}
+
+		uploadDir := fmt.Sprintf("./uploads/%d", categoryID)
+		os.MkdirAll(uploadDir, os.ModePerm)
+
+		// กรองเฉพาะไฟล์ภาพชุดของ product นี้ (เช่น ตาม index หรือชื่อฟิลด์)
+		for _, file := range files {
+			filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), file.Filename)
+			filePath := fmt.Sprintf("%s/%s", uploadDir, filename)
+
+			if err := c.SaveFile(file, filePath); err != nil {
+				log.Println("save failed:", err)
+				continue
+			}
+
+			// เพิ่มเข้า images
+			product.Images = append(product.Images, domain.ProductImage{
+				Path: filePath,
+			})
+		}
+
+		products = append(products, product)
 	}
 
-	if err := h.service.CreateProduct(product); err != nil {
-		utils.Logger.Printf("❌ [CreateProduct] Error from service.CreateProduct (Name: %s, CategoryID: %d): %v",
-			product.Name, product.CategoryID, err)
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to create product"})
+	created, skipped, err := h.service.CreateProducts(products)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	utils.Logger.Printf("✅ [CreateProduct] Product created successfully: %s", product.Name)
-	return c.JSON(fiber.Map{"message": "Product created successfully"})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message":          "Products created",
+		"created_count":    len(created),
+		"skipped_count":    len(skipped),
+		"skipped_products": skipped,
+	})
 }
 
 func (h *ProductHandler) GetAllProduct(c *fiber.Ctx) error {
@@ -52,13 +98,46 @@ func (h *ProductHandler) GetAllProduct(c *fiber.Ctx) error {
 
 func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 	utils.Logger.Println("🔄 [GetAllProducts] Start Get Product all")
-	products, err := h.service.GetAllProducts()
+	searchQuery := c.Query("q", "")
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit", "20"))
+	if err != nil || limit < 1 {
+		limit = 20
+	}
+
+	sort := c.Query("sort", "created_at")
+	order := c.Query("order", "desc")
+
+	minPriceStr := c.Query("min_price", "")
+	maxPriceStr := c.Query("max_price", "")
+
+	var minPrice, maxPrice float64
+	if minPriceStr != "" {
+		minPrice, _ = strconv.ParseFloat(minPriceStr, 64)
+	}
+	if maxPriceStr != "" {
+		maxPrice, _ = strconv.ParseFloat(maxPriceStr, 64)
+	}
+
+	products, totalItems, err := h.service.GetAllProducts(page, limit, sort, order, minPrice, maxPrice, searchQuery)
 	if err != nil {
 		utils.Logger.Printf("❌ [GetAllProducts] Failed Get Product all: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	utils.Logger.Printf("✅ [GetAllProduct] Get Product All successfully")
-	return c.JSON(products)
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+
+	return c.JSON(fiber.Map{
+		"items":        products,
+		"total_items":  totalItems,
+		"total_pages":  totalPages,
+		"current_page": page,
+		"per_page":     limit,
+	})
 }
 
 func (h *ProductHandler) GetProductByID(c *fiber.Ctx) error {
@@ -148,13 +227,110 @@ func (h *ProductHandler) CreateCategory(c *fiber.Ctx) error {
 }
 
 func (h *ProductHandler) GetProductByCategory(c *fiber.Ctx) error {
-	utils.Logger.Println("🔄 [GetproductByCategory] Start Get product By Category")
+	utils.Logger.Println("🔄 [GetProductByCategory] Start Get product By Category")
+
 	category := c.Params("category")
-	products, err := h.service.GetProductByCategory(category)
+
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit", "20"))
+	if err != nil || limit < 1 {
+		limit = 20
+	}
+
+	sort := c.Query("sort", "created_at")
+	order := c.Query("order", "desc")
+
+	minPriceStr := c.Query("min_price", "")
+	maxPriceStr := c.Query("max_price", "")
+
+	var minPrice, maxPrice float64
+	if minPriceStr != "" {
+		minPrice, _ = strconv.ParseFloat(minPriceStr, 64)
+	}
+	if maxPriceStr != "" {
+		maxPrice, _ = strconv.ParseFloat(maxPriceStr, 64)
+	}
+
+	products, totalItems, err := h.service.GetProductByCategory(category, page, limit, sort, order, minPrice, maxPrice)
 	if err != nil {
-		utils.Logger.Printf("❌ [GetProductByCategory] Failed to get products for category '%s': %v", category, err)
+		utils.Logger.Printf("❌ [GetProductByCategory] Failed: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	utils.Logger.Printf("✅ [GetproductByCategory] Get product By Category Successfully: %v", category)
-	return c.JSON(products)
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+
+	return c.JSON(fiber.Map{
+		"items":        products,
+		"total_items":  totalItems,
+		"total_pages":  totalPages,
+		"current_page": page,
+		"per_page":     limit,
+	})
+}
+
+func (h *ProductHandler) CreateMultipleCategories(c *fiber.Ctx) error {
+	var categories []domain.Category // สมมุติใช้ GORM model
+
+	if err := c.BodyParser(&categories); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	for _, cat := range categories {
+		if err := h.service.CreateCategory(cat); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": fmt.Sprintf("Failed to create category: %s", cat.Name),
+			})
+		}
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Categories created successfully",
+	})
+}
+
+func (h *ProductHandler) GetAllCategories(c *fiber.Ctx) error {
+	categories, err := h.service.GetAllCategories()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch categories",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(categories)
+}
+
+func (h *ProductHandler) GetNewArrivals(c *fiber.Ctx) error {
+	utils.Logger.Println("🆕 [GetNewArrivals] Fetching new arrival products")
+
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	products, totalItems, err := h.service.GetNewArrivals(page, limit)
+	if err != nil {
+		utils.Logger.Printf("❌ [GetNewArrivals] Failed to fetch: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+
+	return c.JSON(fiber.Map{
+		"current_page": page,
+		"items":        products,
+		"per_page":     limit,
+		"total_items":  totalItems,
+		"total_pages":  totalPages,
+	})
 }

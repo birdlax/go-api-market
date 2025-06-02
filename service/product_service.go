@@ -2,7 +2,6 @@ package service
 
 import (
 	"backend/domain"
-	"errors"
 )
 
 type productServiceImpl struct {
@@ -13,16 +12,29 @@ func NewProductService(productRepository domain.ProductRepository) domain.Produc
 	return &productServiceImpl{repo: productRepository}
 }
 
-func (s *productServiceImpl) CreateProduct(product domain.Product) error {
-	existingProduct, err := s.repo.GetProductByNameAndCategoryID(product.Name, product.CategoryID)
-	if err != nil {
-		return err
-	}
-	if existingProduct != nil {
-		return errors.New("product already exists in this category")
+func (s *productServiceImpl) CreateProducts(products []*domain.Product) ([]*domain.Product, []string, error) {
+	var toInsert []*domain.Product
+	var skipped []string
+
+	for _, p := range products {
+		existing, err := s.repo.GetProductByNameAndCategoryID(p.Name, p.CategoryID)
+		if err != nil {
+			return nil, nil, err
+		}
+		if existing == nil {
+			toInsert = append(toInsert, p)
+		} else {
+			skipped = append(skipped, p.Name)
+		}
 	}
 
-	return s.repo.Create(product)
+	if len(toInsert) > 0 {
+		if err := s.repo.CreateBulkProducts(toInsert); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return toInsert, skipped, nil
 }
 
 func (s *productServiceImpl) GetAllProduct() ([]domain.Product, error) {
@@ -33,12 +45,13 @@ func (s *productServiceImpl) GetAllProduct() ([]domain.Product, error) {
 	return products, nil
 }
 
-func (s *productServiceImpl) GetAllProducts() ([]domain.Product, error) {
-	products, err := s.repo.GetAllProducts()
-	if err != nil {
-		return nil, err
-	}
-	return products, nil
+func (s *productServiceImpl) GetAllProducts(
+	page, limit int,
+	sort, order string,
+	minPrice, maxPrice float64,
+	search string, // เพิ่ม
+) ([]domain.Product, int64, error) {
+	return s.repo.GetAllProducts(page, limit, sort, order, minPrice, maxPrice, search)
 }
 
 func (s *productServiceImpl) GetProductByID(id uint) (*domain.Product, error) {
@@ -79,10 +92,19 @@ func (s *productServiceImpl) CreateCategory(category domain.Category) error {
 	return nil
 }
 
-func (s *productServiceImpl) GetProductByCategory(category string) ([]domain.Product, error) {
-	products, err := s.repo.GetProductByCategory(category)
-	if err != nil {
-		return nil, err
-	}
-	return products, nil
+func (s *productServiceImpl) GetProductByCategory(
+	category string,
+	page, limit int,
+	sort, order string,
+	minPrice, maxPrice float64,
+) ([]domain.Product, int64, error) {
+	return s.repo.GetProductByCategory(category, page, limit, sort, order, minPrice, maxPrice)
+}
+
+func (s *productServiceImpl) GetAllCategories() ([]domain.Category, error) {
+	return s.repo.GetAll()
+}
+
+func (s *productServiceImpl) GetNewArrivals(page, limit int) ([]domain.Product, int64, error) {
+	return s.repo.GetNewArrivals(page, limit)
 }

@@ -2,7 +2,11 @@ package repository
 
 import (
 	"backend/domain"
+	"errors"
+	"fmt"
 	"gorm.io/gorm"
+	"strings"
+	"time"
 )
 
 type userRepositoryImpl struct {
@@ -47,12 +51,46 @@ func (r *userRepositoryImpl) Delete(id uint) error {
 	}
 	return nil
 }
-func (r *userRepositoryImpl) GetAll() ([]domain.User, error) {
+
+func (r *userRepositoryImpl) GetAll(page, limit int, sort, order string) ([]domain.User, int64, error) {
 	var users []domain.User
-	if err := r.db.Find(&users).Error; err != nil {
-		return nil, err
+	var totalItems int64
+
+	offset := (page - 1) * limit
+
+	// map sort field ป้องกัน SQL injection
+	validSortFields := map[string]string{
+		"id":        "id",
+		"createdat": "created_at",
+		"updatedat": "updated_at",
+		"username":  "username",
+		"email":     "email",
 	}
-	return users, nil
+	sortField := validSortFields[strings.ToLower(sort)]
+	if sortField == "" {
+		sortField = "created_at"
+	}
+
+	sortOrder := "ASC"
+	if strings.ToLower(order) == "desc" {
+		sortOrder = "DESC"
+	}
+
+	// นับทั้งหมดก่อน
+	if err := r.db.Model(&domain.User{}).Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// ดึงข้อมูลแบบมี offset / limit
+	if err := r.db.
+		Order(fmt.Sprintf("%s %s", sortField, sortOrder)).
+		Limit(limit).
+		Offset(offset).
+		Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return users, totalItems, nil
 }
 
 func (r *userRepositoryImpl) GetDefaultAddress(userID uint) (*domain.Address, error) {
@@ -65,4 +103,39 @@ func (r *userRepositoryImpl) GetDefaultAddress(userID uint) (*domain.Address, er
 		return nil, err
 	}
 	return &address, nil
+}
+
+func (r *userRepositoryImpl) SaveResetToken(userID uint, token string, expiresAt time.Time) error {
+	prt := domain.ResetToken{
+		UserID:    userID,
+		Token:     token,
+		ExpiresAt: expiresAt,
+	}
+	return r.db.Create(&prt).Error
+}
+
+func (r *userRepositoryImpl) FindByEmail(email string) (*domain.User, error) {
+	var user domain.User
+	err := r.db.Where("email = ?", email).First(&user).Error
+	return &user, err
+}
+
+func (r *userRepositoryImpl) FindUserIDByResetToken(token string) (uint, error) {
+	var prt domain.ResetToken
+	err := r.db.Where("token = ? AND expires_at > ?", token, time.Now()).First(&prt).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, errors.New("invalid or expired token")
+		}
+		return 0, err
+	}
+	return prt.UserID, nil
+}
+func (r *userRepositoryImpl) UpdatePassword(userID uint, hashedPassword string) error {
+	return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("password", hashedPassword).Error
+}
+
+// ลบ token หลังจากรีเซ็ตแล้ว
+func (r *userRepositoryImpl) DeleteResetToken(token string) error {
+	return r.db.Where("token = ?", token).Delete(&domain.ResetToken{}).Error
 }

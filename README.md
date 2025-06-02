@@ -66,3 +66,9 @@ go run dev
   "product_id": xxx,
   "quantity": xx
 }
+
+
+ตัวอย่าง ใช้ API product 
+http://localhost:3000/admin/products?page=1&limit=5     
+http://localhost:3000/filter/category/category?page=1&limit=20 
+http://localhost:3000/products?page=1&limit=10&sort=price&order=asc&min_price=100&max_price=200

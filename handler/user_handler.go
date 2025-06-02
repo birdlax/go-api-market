@@ -4,9 +4,11 @@ import (
 	"backend/config"
 	"backend/domain"
 	"backend/utils"
-	"github.com/gofiber/fiber/v2"
+	"math"
 	"strconv"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
@@ -150,13 +152,35 @@ func (h *UserHandler) Delete(c *fiber.Ctx) error {
 
 func (h *UserHandler) GetAll(c *fiber.Ctx) error {
 	utils.Logger.Println("🔄 [GetAll] Start retrieving all users")
-	users, err := h.service.GetAll()
+
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	sort := c.Query("sort", "created_at")
+	order := c.Query("order", "desc")
+
+	users, totalItems, err := h.service.GetAll(page, limit, sort, order)
 	if err != nil {
-		utils.Logger.Printf("❌ [GetAll] Failed to get user : %v", err)
+		utils.Logger.Printf("❌ [GetAll] Failed to get users: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	utils.Logger.Printf("✅ [GetAll] Successfully GetAll %d users", len(users))
-	return c.JSON(users)
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+
+	return c.JSON(fiber.Map{
+		"current_page": page,
+		"items":        users,
+		"per_page":     limit,
+		"total_items":  totalItems,
+		"total_pages":  totalPages,
+	})
 }
 
 func (h *UserHandler) Logout(c *fiber.Ctx) error {
@@ -245,4 +269,49 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 
 func (h *UserHandler) GetHello(c *fiber.Ctx) error {
 	return c.SendString("Hello, ความที่เมื่อไหร่จะได้!")
+}
+
+func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	if err := h.service.SendResetPasswordEmail(req.Email); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Reset link sent"})
+}
+
+func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
+	var req struct {
+		Token       string `json:"token"`
+		NewPassword string `json:"new_password"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	if req.Token == "" || req.NewPassword == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Token and new password are required",
+		})
+	}
+
+	err := h.service.ResetPassword(req.Token, req.NewPassword)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Password reset successfully",
+	})
 }

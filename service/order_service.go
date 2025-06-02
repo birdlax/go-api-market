@@ -127,8 +127,8 @@ func (s *orderServiceImpl) CreateOrder(order domain.Order) (domain.Order, error)
 	return order, nil
 }
 
-func (s *orderServiceImpl) GetAllOrders() ([]domain.Order, error) {
-	return s.repo.GetAllOrders()
+func (s *orderServiceImpl) GetAllOrders(page, limit int, sort, order string) ([]domain.Order, int64, error) {
+	return s.repo.GetAllOrders(page, limit, sort, order)
 }
 
 func (s *orderServiceImpl) GetUnpaidOrdersByUserID(userID uint) ([]domain.Order, error) {
@@ -250,13 +250,4 @@ func (s *orderServiceImpl) CancelOrderByUserID(userID uint) error {
 	}
 
 	return nil
-}
-
-// Service
-func (s *orderServiceImpl) GetRevenueByCategory(status string) ([]domain.RevenueResult, error) {
-	results, err := s.repo.GetRevenueByCategory(status)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get revenue by category: %w", err)
-	}
-	return results, nil
 }

@@ -85,10 +85,11 @@ func (s *cartServiceImpl) Checkout(userID uint, req domain.CheckoutRequest) (*do
 	}
 
 	order := domain.Order{
-		UserID:     userID,
-		AddressID:  req.ShippingAddressID,
-		Status:     "pending",
-		OrderItems: make([]domain.OrderItem, len(cart.CartItems)),
+		UserID:        userID,
+		AddressID:     req.ShippingAddressID,
+		Status:        "pending",
+		PaymentMethod: req.PaymentMethod,
+		OrderItems:    make([]domain.OrderItem, len(cart.CartItems)),
 	}
 
 	for i, item := range cart.CartItems {

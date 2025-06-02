@@ -13,6 +13,8 @@ import (
 
 func main() {
 	app := fiber.New()
+
+	app.Static("/uploads", "./uploads") // ให้ URL /uploads/... เข้าได้
 	config.ConnectDatabase()
 
 	utils.InitLogger()
@@ -37,10 +39,16 @@ func main() {
 	addressService := service.NewAddressService(addressRepo)
 	addressHandler := handler.NewAddressHandler(addressService)
 
+	// report
+	reportRepo := repository.NewReportRepository(config.DB)
+	reportService := service.NewReportService(reportRepo)
+	reportHandler := handler.NewReportHandler(reportService)
+
 	routes.UserRoutes(app, userHandler)
 	routes.ProductRoutes(app, productHandler)
 	routes.OrderRoutes(app, orderHandler)
 	routes.CartRoutes(app, cartHandler)
 	routes.AddressRouter(app, addressHandler)
+	routes.ReportRoutes(app, reportHandler)
 	app.Listen(":3000")
 }

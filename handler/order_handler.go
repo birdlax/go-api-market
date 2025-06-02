@@ -3,8 +3,10 @@ package handler
 import (
 	"backend/domain"
 	"backend/utils"
-	"github.com/gofiber/fiber/v2"
+	"math"
 	"strconv"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type OrderHandler struct {
@@ -48,13 +50,36 @@ func (h *OrderHandler) GetOrdersByStatus(c *fiber.Ctx) error {
 
 func (h *OrderHandler) GetAllOrders(c *fiber.Ctx) error {
 	utils.Logger.Println("🔄 [GetAllOrders] Start fetching all orders")
-	orders, err := h.service.GetAllOrders()
+
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	sort := c.Query("sort", "createdat")
+	order := c.Query("order", "desc")
+
+	orders, totalItems, err := h.service.GetAllOrders(page, limit, sort, order)
 	if err != nil {
 		utils.Logger.Printf("❌ [GetAllOrders] Failed to fetch orders: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+
 	utils.Logger.Println("✅ [GetAllOrders] Successfully fetched all orders")
-	return c.JSON(orders)
+	return c.JSON(fiber.Map{
+		"current_page": page,
+		"items":        orders,
+		"per_page":     limit,
+		"total_items":  totalItems,
+		"total_pages":  totalPages,
+	})
 }
 
 func (h *OrderHandler) GetOrderByID(c *fiber.Ctx) error {
@@ -174,15 +199,4 @@ func (h *OrderHandler) CancelOrder(c *fiber.Ctx) error {
 
 	utils.Logger.Printf("✅ [CancelOrder] Successfully canceled order for user %d", userID)
 	return c.JSON(fiber.Map{"message": "Order canceled successfully"})
-}
-
-func (h *OrderHandler) GetRevenueByCategory(c *fiber.Ctx) error {
-	status := c.Query("status")
-	results, err := h.service.GetRevenueByCategory(status)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-	return c.JSON(results)
 }

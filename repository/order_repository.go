@@ -3,6 +3,8 @@ package repository
 import (
 	"backend/domain"
 	"fmt"
+	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -52,12 +54,44 @@ func (r *orderRepositoryImpl) GetProductByID(id uint) (*domain.Product, error) {
 	return &product, nil
 }
 
-func (r *orderRepositoryImpl) GetAllOrders() ([]domain.Order, error) {
+func (r *orderRepositoryImpl) GetAllOrders(page, limit int, sort, order string) ([]domain.Order, int64, error) {
 	var orders []domain.Order
-	if err := r.db.Preload("OrderItems").Find(&orders).Error; err != nil {
-		return nil, err
+	var totalItems int64
+
+	offset := (page - 1) * limit
+
+	validSortFields := map[string]string{
+		"createdat": "created_at",
+		"updatedat": "updated_at",
+		"id":        "id",
 	}
-	return orders, nil
+
+	sortField := validSortFields[strings.ToLower(sort)]
+	if sortField == "" {
+		sortField = "created_at"
+	}
+
+	sortOrder := "ASC"
+	if strings.ToLower(order) == "desc" {
+		sortOrder = "DESC"
+	}
+
+	// นับจำนวนรวม
+	if err := r.db.Model(&domain.Order{}).Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	query := r.db.
+		Preload("OrderItems").
+		Order(fmt.Sprintf("%s %s", sortField, sortOrder)).
+		Limit(limit).
+		Offset(offset)
+
+	if err := query.Find(&orders).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return orders, totalItems, nil
 }
 
 func (r *orderRepositoryImpl) UpdateProductStock(tx *gorm.DB, product *domain.Product) error {
@@ -102,7 +136,7 @@ func (r *orderRepositoryImpl) DeleteOrder(id uint) error {
 
 func (r *orderRepositoryImpl) GetPendingOrderByUserID(userID uint) (domain.Order, error) {
 	var order domain.Order
-	err := r.db.Where("user_id = ? AND status = ?", userID, "pending").First(&order).Error
+	err := r.db.Where("user_id = ? AND status = ?", userID, "pending").Order("created_at DESC").First(&order).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return domain.Order{}, nil // ไม่พบ order ที่ค้างอยู่ = OK
@@ -127,24 +161,4 @@ func (r *orderRepositoryImpl) DeleteOrderItemsByOrderID(tx *gorm.DB, orderID uin
 
 func (r *orderRepositoryImpl) CreateOrderItems(tx *gorm.DB, items []domain.OrderItem) error {
 	return tx.Create(&items).Error
-}
-
-func (r *orderRepositoryImpl) GetRevenueByCategory(status string) ([]domain.RevenueResult, error) {
-	var results []domain.RevenueResult
-
-	query := r.db.
-		Table("order_items").
-		Select(`categories.name AS category_name, 
-                SUM(order_items.quantity * order_items.price) AS total_revenue,
-                SUM(order_items.quantity) AS total_quantity`).
-		Joins("JOIN products ON products.id = order_items.product_id").
-		Joins("JOIN categories ON categories.id = products.category_id").
-		Joins("JOIN orders ON orders.id = order_items.order_id")
-
-	if status != "" {
-		query = query.Where("orders.status = ?", status)
-	}
-
-	err := query.Group("categories.name").Scan(&results).Error
-	return results, err
 }

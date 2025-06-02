@@ -5,6 +5,9 @@ import (
 	"backend/utils"
 	"errors"
 	"fmt"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type userService struct {
@@ -116,12 +119,8 @@ func (s *userService) Delete(id uint) error {
 	return nil
 }
 
-func (s *userService) GetAll() ([]domain.User, error) {
-	users, err := s.repo.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
+func (s *userService) GetAll(page, limit int, sort, order string) ([]domain.User, int64, error) {
+	return s.repo.GetAll(page, limit, sort, order)
 }
 
 func (s *userService) UpdatePassword(id uint, req domain.UpdatePasswordRequest) error {
@@ -170,4 +169,43 @@ func (s *userService) UpdateProfile(id uint, req domain.UpdateProfileRequest) er
 		return fmt.Errorf("update user failed: %w", err)
 	}
 	return nil
+}
+
+func (s *userService) FindByEmail(email string) (*domain.User, error) {
+	return s.repo.GetByEmail(email)
+}
+
+func (s *userService) SendResetPasswordEmail(email string) error {
+	user, err := s.repo.GetByEmail(email)
+	if err != nil {
+		return fmt.Errorf("email not found")
+	}
+
+	token := uuid.NewString()
+	expiration := time.Now().Add(1 * time.Hour)
+
+	if err := s.repo.SaveResetToken(user.ID, token, expiration); err != nil {
+		return err
+	}
+	utils.Logger.Printf("Sending reset password email to: %s, token: %s", user.Email, token)
+	// link := fmt.Sprintf("http://localhost:5173/reset-password?token=%s", token)
+	return utils.SendResetPasswordEmail(user.Email, token)
+}
+
+func (s *userService) ResetPassword(token string, newPassword string) error {
+	userID, err := s.repo.FindUserIDByResetToken(token)
+	if err != nil {
+		return errors.New("invalid or expired token")
+	}
+
+	hashedPassword, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.UpdatePassword(userID, hashedPassword); err != nil {
+		return err
+	}
+
+	return s.repo.DeleteResetToken(token)
 }

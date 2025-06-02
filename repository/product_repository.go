@@ -3,6 +3,8 @@ package repository
 import (
 	"backend/domain"
 	"errors"
+	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -21,7 +23,7 @@ func (r *productRepositoryImpl) Create(product domain.Product) error {
 
 func (r *productRepositoryImpl) GetAllProduct() ([]domain.Product, error) {
 	var products []domain.Product
-	if err := r.db.Find(&products).Error; err != nil {
+	if err := r.db.Preload("Images").Order("id ASC").Find(&products).Error; err != nil {
 		return nil, err
 	}
 	return products, nil
@@ -29,7 +31,7 @@ func (r *productRepositoryImpl) GetAllProduct() ([]domain.Product, error) {
 
 func (r *productRepositoryImpl) GetProductByID(id uint) (*domain.Product, error) {
 	var product domain.Product
-	if err := r.db.First(&product, id).Error; err != nil {
+	if err := r.db.Preload("Images").Preload("Category").First(&product, id).Error; err != nil {
 		return nil, err
 	}
 	return &product, nil
@@ -65,15 +67,62 @@ func (r *productRepositoryImpl) CreateCategory(category domain.Category) error {
 	return nil
 }
 
-func (r *productRepositoryImpl) GetProductByCategory(category string) ([]domain.Product, error) {
+func (r *productRepositoryImpl) GetProductByCategory(
+	category string,
+	page, limit int,
+	sort, order string,
+	minPrice, maxPrice float64,
+) ([]domain.Product, int64, error) {
 	var products []domain.Product
-	if err := r.db.
-		Preload("Category").
-		Where("category_id = ?", category).
-		Find(&products).Error; err != nil {
-		return nil, err
+	var totalItems int64
+
+	offset := (page - 1) * limit
+
+	// Map สำหรับ sort field ที่อนุญาต
+	validSortFields := map[string]string{
+		"id":        "id",
+		"name":      "name",
+		"price":     "price",
+		"createdat": "created_at",
+		"updatedat": "updated_at",
 	}
-	return products, nil
+
+	sortField := validSortFields[strings.ToLower(sort)]
+	if sortField == "" {
+		sortField = "created_at"
+	}
+
+	sortOrder := "ASC"
+	if strings.ToLower(order) == "desc" {
+		sortOrder = "DESC"
+	}
+
+	query := r.db.Model(&domain.Product{}).Where("category_id = ?", category)
+
+	if minPrice > 0 {
+		query = query.Where("price >= ?", minPrice)
+	}
+	if maxPrice > 0 {
+		query = query.Where("price <= ?", maxPrice)
+	}
+
+	// นับจำนวนสินค้าทั้งหมด
+	if err := query.Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// ดึงสินค้าตามเงื่อนไข
+	if err := query.
+		Preload("Images").
+		Preload("Category").
+		Order(fmt.Sprintf("%s %s", sortField, sortOrder)).
+		Limit(limit).
+		Offset(offset).
+		Find(&products).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return products, totalItems, nil
 }
 
 func (r *productRepositoryImpl) GetProductByNameAndCategoryID(name string, categoryID uint) (*domain.Product, error) {
@@ -89,11 +138,100 @@ func (r *productRepositoryImpl) GetProductByNameAndCategoryID(name string, categ
 
 	return &product, nil
 }
-
-func (r *productRepositoryImpl) GetAllProducts() ([]domain.Product, error) {
+func (r *productRepositoryImpl) GetAllProducts(
+	page, limit int,
+	sort, order string,
+	minPrice, maxPrice float64,
+	search string, // เพิ่ม
+) ([]domain.Product, int64, error) {
 	var products []domain.Product
-	if err := r.db.Preload("Category").Find(&products).Error; err != nil {
+	var totalItems int64
+	offset := (page - 1) * limit
+
+	validSortFields := map[string]string{
+		"id":        "id",
+		"name":      "name",
+		"createdat": "created_at",
+		"updatedat": "updated_at",
+		"price":     "price",
+	}
+	sortField := validSortFields[strings.ToLower(sort)]
+	if sortField == "" {
+		sortField = "created_at"
+	}
+	sortOrder := "ASC"
+	if strings.ToLower(order) == "desc" {
+		sortOrder = "DESC"
+	}
+
+	query := r.db.Model(&domain.Product{})
+
+	// 🔎 เพิ่มการค้นหา
+	if search != "" {
+		query = query.Where("name ILIKE ? OR description ILIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+
+	// 🔢 กรองราคา
+	if minPrice > 0 {
+		query = query.Where("price >= ?", minPrice)
+	}
+	if maxPrice > 0 {
+		query = query.Where("price <= ?", maxPrice)
+	}
+
+	// 👇 นับและดึงข้อมูล
+	if err := query.Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+	if err := query.
+		Preload("Images").
+		Preload("Category").
+		Order(fmt.Sprintf("%s %s", sortField, sortOrder)).
+		Limit(limit).
+		Offset(offset).
+		Find(&products).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return products, totalItems, nil
+}
+
+func (r *productRepositoryImpl) GetAll() ([]domain.Category, error) {
+	var categories []domain.Category
+	if err := r.db.Find(&categories).Error; err != nil {
 		return nil, err
 	}
-	return products, nil
+	return categories, nil
+}
+
+func (r *productRepositoryImpl) GetNewArrivals(page, limit int) ([]domain.Product, int64, error) {
+	var products []domain.Product
+	var totalItems int64
+
+	offset := (page - 1) * limit
+
+	if err := r.db.Model(&domain.Product{}).Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := r.db.
+		Preload("Images").
+		Preload("Category").
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&products).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return products, totalItems, nil
+}
+
+func (r *productRepositoryImpl) CreateBulkProducts(products []*domain.Product) error {
+	for _, p := range products {
+		if err := r.db.Create(&p).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }

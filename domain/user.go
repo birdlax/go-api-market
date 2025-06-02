@@ -2,6 +2,7 @@ package domain
 
 import (
 	"gorm.io/gorm"
+	"time"
 )
 
 type User struct {
@@ -45,13 +46,32 @@ type UpdatePasswordRequest struct {
 	NewPassword string `json:"new_password"`
 }
 
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+type ResetToken struct {
+	ID        uint      `gorm:"primaryKey"`
+	UserID    uint      `gorm:"not null"`
+	Token     string    `gorm:"unique;not null"`
+	ExpiresAt time.Time `gorm:"not null"`
+	Used      bool      `gorm:"default:false"`
+	CreatedAt time.Time
+}
+
 type UserRepository interface {
 	Create(user *User) error
 	GetByEmail(email string) (*User, error)
 	GetByID(id uint) (*User, error)
 	Update(user *User) error
 	Delete(id uint) error
-	GetAll() ([]User, error)
+
+	SaveResetToken(userID uint, token string, expiresAt time.Time) error
+	FindByEmail(email string) (*User, error)
+	FindUserIDByResetToken(token string) (uint, error)
+	UpdatePassword(userID uint, hashedPassword string) error
+	DeleteResetToken(token string) error
+	GetAll(page, limit int, sort, order string) ([]User, int64, error)
 }
 
 type UserService interface {
@@ -59,7 +79,11 @@ type UserService interface {
 	Login(req LoginRequest) (*LoginResponse, error)
 	GetByID(id uint) (*UserResponse, error)
 	Delete(id uint) error
-	GetAll() ([]User, error)
 	UpdatePassword(id uint, req UpdatePasswordRequest) error
 	UpdateProfile(id uint, req UpdateProfileRequest) error
+
+	FindByEmail(email string) (*User, error)
+	SendResetPasswordEmail(email string) error
+	ResetPassword(token string, newPassword string) error
+	GetAll(page, limit int, sort, order string) ([]User, int64, error)
 }

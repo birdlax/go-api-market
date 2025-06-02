@@ -9,6 +9,7 @@ services:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
     volumes:
+      - ./uploads:/root/uploads
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
@@ -30,6 +31,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     environment:
