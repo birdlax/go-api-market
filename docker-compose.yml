@@ -44,8 +44,7 @@ services:
       EMAIL_USERNAME: sungjinta@gmail.com
       EMAIL_PASSWORD: aqio nbmf kdwv wkeu
     depends_on:
-      postgres: # <--- เพิ่ม condition
-        condition: service_healthy
+      - postgres
 
 volumes:
   postgres_data:
