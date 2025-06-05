@@ -1,33 +1,62 @@
 package middleware
 
 import (
+	"backend/config"
 	"backend/utils"
 	"github.com/gofiber/fiber/v2"
+	"log"
 )
 
 func JWTMiddleware(c *fiber.Ctx) error {
-	token := c.Cookies("JWT")
+	// Log Header "Cookie" ดิบๆ ที่ Server ได้รับทันที
+	rawCookieHeader := c.Get("Cookie")
+	log.Printf("JWTMiddleware: Raw Cookie Header received: '%s'", rawCookieHeader)
+
+	// ดึงค่า Cookie "JWT"
+	token := c.Cookies(config.JwtCookieName) // ใช้ config.JwtCookieName เพื่อความสอดคล้อง
+	log.Printf("JWTMiddleware: Value from c.Cookies(\"%s\"): '%s'", config.JwtCookieName, token)
+
 	if token == "" {
+		log.Println("JWTMiddleware: Cookie 'JWT' is empty or not found. Responding 401 Unauthorized.")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	claims, err := utils.ParseToken(token)
+	log.Printf("JWTMiddleware: Attempting to parse token: '%s'", token)
+	claims, err := utils.ParseToken(token) // สมมติว่า utils.ParseToken ใช้ config.JwtSecret
 	if err != nil {
+		log.Printf("JWTMiddleware: Error parsing token: %v. Responding 401 Invalid token.", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token"})
 	}
+	log.Printf("JWTMiddleware: Token parsed successfully. Claims: %+v", claims)
 
-	if idFloat, ok := claims["user_id"].(float64); ok {
-		c.Locals("user_id", uint(idFloat))
-	} else {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid ID format"})
+	// ดึง user_id
+	userIDClaim, userIDOk := claims["user_id"]
+	if !userIDOk {
+		log.Printf("JWTMiddleware: 'user_id' claim missing. Claims: %+v", claims)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token structure: user_id missing"})
 	}
-	c.Locals("role", claims["role"])
-	// ใน JWTMiddleware บน VM
-	allCookies := c.GetReqHeaders()["Cookie"]
-	utils.Logger.Printf("JWTMiddleware: All cookies received by server: %s", allCookies)
+	idFloat, idFloatOk := userIDClaim.(float64)
+	if !idFloatOk {
+		log.Printf("JWTMiddleware: 'user_id' claim is not a float64. Type: %T, Value: %v. Claims: %+v", userIDClaim, userIDClaim, claims)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid ID format in token"})
+	}
+	c.Locals("user_id", uint(idFloat))
+	log.Printf("JWTMiddleware: user_id set in locals: %d", uint(idFloat))
 
-	token = c.Cookies("JWT")
-	utils.Logger.Printf("🎉 JWTMiddleware: Token from c.Cookies(\"JWT\"): '%s'", token)
+	// ดึง role
+	roleClaim, roleClaimOk := claims["role"]
+	if !roleClaimOk {
+		log.Printf("JWTMiddleware: 'role' claim missing. Claims: %+v", claims)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token structure: role missing"})
+	}
+	roleString, roleStringOk := roleClaim.(string)
+	if !roleStringOk {
+		log.Printf("JWTMiddleware: 'role' claim is not a string. Type: %T, Value: %v. Claims: %+v", roleClaim, roleClaim, claims)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid role format in token"})
+	}
+	c.Locals("role", roleString)
+	log.Printf("JWTMiddleware: role set in locals: '%s'", roleString)
+
 	return c.Next()
 }
 
