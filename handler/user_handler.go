@@ -267,10 +267,6 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Profile updated successfully"})
 }
 
-func (h *UserHandler) GetHello(c *fiber.Ctx) error {
-	return c.SendString("Hello, ความที่เมื่อไหร่จะได้!")
-}
-
 func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 	var req struct {
 		Email string `json:"email"`
@@ -314,4 +310,8 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Password reset successfully",
 	})
+}
+
+func (h *UserHandler) GetHello(c *fiber.Ctx) error {
+	return c.SendString("Hello, เพิ่ม log jwt!")
 }
