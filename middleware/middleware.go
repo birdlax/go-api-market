@@ -22,7 +22,12 @@ func JWTMiddleware(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid ID format"})
 	}
 	c.Locals("role", claims["role"])
+	// ใน JWTMiddleware บน VM
+	allCookies := c.GetReqHeaders()["Cookie"]
+	utils.Logger.Printf("JWTMiddleware: All cookies received by server: %s", allCookies)
 
+	token = c.Cookies("JWT")
+	utils.Logger.Printf("🎉 JWTMiddleware: Token from c.Cookies(\"JWT\"): '%s'", token)
 	return c.Next()
 }
 
