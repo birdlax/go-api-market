@@ -41,6 +41,10 @@ services:
       DB_USER: myuser
       DB_PASSWORD: mypassword
       DB_NAME: mydatabase
+      EMAIL_USERNAME: sungjinta@gmail.com
+      EMAIL_PASSWORD: aqio nbmf kdwv wkeu
+
+      
     depends_on:
       - postgres
 
