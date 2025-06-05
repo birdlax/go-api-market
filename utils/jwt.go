@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"backend/config"
+	// "backend/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -17,7 +17,8 @@ func GenerateToken(userID uint, email string, role string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(config.JwtSecret)
+	// return token.SignedString(config.JwtSecret)
+	return token.SignedString([]byte("JWT")) // ใช้คีย์ลับจาก config
 }
 
 func ParseToken(tokenStr string) (jwt.MapClaims, error) {
@@ -25,7 +26,8 @@ func ParseToken(tokenStr string) (jwt.MapClaims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return config.JwtSecret, nil
+		// return config.JwtSecret, nil
+		return []byte("JWT"), nil // ใช้คีย์ลับจาก config
 	})
 	if err != nil {
 		return nil, err

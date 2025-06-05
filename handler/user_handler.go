@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"backend/config"
+	// "backend/config"
 	"backend/domain"
 	"backend/utils"
 	"math"
@@ -75,7 +75,8 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Name:     config.JwtCookieName,
+		// Name:     config.JwtCookieName,
+		Name:     "JWT",
 		Value:    user.Token,
 		Expires:  time.Now().Add(time.Hour * 72),
 		HTTPOnly: true,
