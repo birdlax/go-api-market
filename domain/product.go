@@ -27,12 +27,23 @@ type ProductImage struct {
 	Path      string `json:"path"` // local file path เช่น "uploads/1/23/image1.jpg"
 }
 
+type UpdateProductInput struct {
+	ID             uint
+	Name           string
+	Description    string
+	Price          float64
+	Quantity       int
+	CategoryID     uint
+	Images         []ProductImage
+	KeepImagePaths []string
+}
+
 type ProductRepository interface {
 	Create(product Product) error
 	GetAllProduct() ([]Product, error)
 	GetProductByID(id uint) (*Product, error)
 	GetProductByName(name string) (*Product, error)
-	UpdateProduct(product Product) error
+
 	Delete(id uint) error
 	CreateCategory(category Category) error
 	GetProductByNameAndCategoryID(name string, categoryID uint) (*Product, error)
@@ -55,12 +66,18 @@ type ProductRepository interface {
 		minPrice, maxPrice float64,
 	) ([]Product, int64, error)
 	CreateBulkProducts(products []*Product) error
+
+	GetProductByNameAndCategoryIDPro(name string, categoryID uint) (*Product, error)
+	CreateBulkProductsPro(products []*Product) error
+	FindProductByID(id uint, product *Product) error
+
+	UpdateProduct(input *UpdateProductInput) (*Product, error)
+	DeleteProductImageByID(imageID uint) error
 }
 
 type ProductService interface {
 	// CreateProduct(product Product) error
 	GetAllProduct() ([]Product, error)
-	UpdateProduct(product Product) error
 	GetProductByID(id uint) (*Product, error)
 	GetProductByName(name string) (*Product, error)
 	Delete(id uint) error
@@ -82,4 +99,6 @@ type ProductService interface {
 		minPrice, maxPrice float64,
 	) ([]Product, int64, error)
 	CreateProducts(products []*Product) ([]*Product, []string, error)
+	CreateProductsPro(products []*Product) ([]*Product, []string, error)
+	UpdateProduct(input *UpdateProductInput) (*Product, error)
 }

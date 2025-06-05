@@ -92,13 +92,26 @@ func (h *OrderHandler) GetOrderByID(c *fiber.Ctx) error {
 	}
 	id := uint(idUint64)
 
+	// ✅ ดึง userID และ role จาก middleware
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user ID"})
+	}
+	role := c.Locals("role")
+
 	order, err := h.service.GetOrderByID(id)
 	if err != nil {
 		utils.Logger.Printf("❌ [GetOrderByID] Order not found: %v", err)
 		return c.Status(404).JSON(fiber.Map{"error": "Order not found"})
 	}
 
-	utils.Logger.Printf("✅ [GetOrderByID] Successfully fetched order ID: %d", id)
+	// ✅ ถ้าไม่ใช่ admin → ต้องเป็นเจ้าของ order เท่านั้น
+	if role != "admin" && order.UserID != userID {
+		utils.Logger.Printf("❌ [GetOrderByID] Forbidden access by user ID: %d", userID)
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "You are not allowed to view this order"})
+	}
+
+	utils.Logger.Printf("✅ [GetOrderByID] Order ID: %d accessed by user ID: %d", id, userID)
 	return c.JSON(order)
 }
 

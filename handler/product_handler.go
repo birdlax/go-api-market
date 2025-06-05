@@ -4,13 +4,13 @@ import (
 	"backend/domain"
 	"backend/utils"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"log"
 	"math"
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 type ProductHandler struct {
@@ -34,9 +34,12 @@ func (h *ProductHandler) CreateMultipleProducts(c *fiber.Ctx) error {
 	prices := form.Value["price"]
 	quantities := form.Value["quantity"]
 	categoryIDs := form.Value["category_id"]
-	files := form.File["images"] // ใช้ชื่อฟิลด์ "images" และอัปโหลดหลายไฟล์
+	files := form.File["images"]
 
 	for i := 0; i < len(names); i++ {
+		// key := fmt.Sprintf("images_%d", i)
+		// productFiles := form.File[key]
+
 		categoryID, _ := strconv.Atoi(categoryIDs[i])
 		price, _ := strconv.ParseFloat(prices[i], 64)
 		quantity, _ := strconv.Atoi(quantities[i])
@@ -171,26 +174,67 @@ func (h *ProductHandler) GetProductByName(c *fiber.Ctx) error {
 
 func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
-	utils.Logger.Printf("🔄 [UpdateProduct] Start Update product: %s", id)
-	parsedID, err := strconv.ParseUint(id, 10, 32)
+	productID, err := strconv.Atoi(id)
 	if err != nil {
-		utils.Logger.Printf("❌ [UpdateProduct] Invalid ID format: %v", err)
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID format"})
-	}
-	var product domain.Product
-	if err := c.BodyParser(&product); err != nil {
-		utils.Logger.Printf("❌ [UpdateProduct] Invalid request body:: %v", err)
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid product ID"})
 	}
 
-	product.ID = uint(parsedID)
-
-	if err := h.service.UpdateProduct(product); err != nil {
-		utils.Logger.Printf("❌ [UpdateProduct] Failed to update product ID %d: %v", parsedID, err)
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	form, err := c.MultipartForm()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid multipart form"})
 	}
-	utils.Logger.Printf("✅ [UpdateProduct] Product updated successfully")
-	return c.JSON(fiber.Map{"message": "Product updated successfully"})
+
+	name := form.Value["name"][0]
+	description := form.Value["description"][0]
+	price, _ := strconv.ParseFloat(form.Value["price"][0], 64)
+	quantity, _ := strconv.Atoi(form.Value["quantity"][0])
+	categoryID, _ := strconv.Atoi(form.Value["category_id"][0])
+
+	// 👉 ดึง keep_images จาก form
+	keepImagePaths := form.Value["keep_images"] // เป็น []string
+
+	input := domain.UpdateProductInput{
+		ID:             uint(productID),
+		Name:           name,
+		Description:    description,
+		Price:          price,
+		Quantity:       quantity,
+		CategoryID:     uint(categoryID),
+		KeepImagePaths: keepImagePaths, // 👈 ส่งเข้า input ด้วย
+		Images:         []domain.ProductImage{},
+	}
+
+	// รับไฟล์ภาพใหม่
+	files := form.File["images"]
+	if len(files) > 0 {
+		var images []domain.ProductImage
+		uniqueName := uuid.New().String()
+		uploadDir := fmt.Sprintf("./uploads/%d/%s", categoryID, uniqueName)
+		os.MkdirAll(uploadDir, os.ModePerm)
+
+		for _, file := range files {
+			filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), file.Filename)
+			relativePath := fmt.Sprintf("./uploads/%d/%s/%s", categoryID, uniqueName, filename)
+
+			if err := c.SaveFile(file, relativePath); err != nil {
+				log.Println("Save file failed:", err)
+				continue
+			}
+
+			images = append(images, domain.ProductImage{Path: relativePath})
+		}
+
+		if len(images) > 0 {
+			input.Images = images
+		}
+	}
+
+	updated, err := h.service.UpdateProduct(&input)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Product updated", "product": updated})
 }
 
 func (h *ProductHandler) Delete(c *fiber.Ctx) error {
@@ -210,7 +254,6 @@ func (h *ProductHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Product deleted successfully"})
 }
 
-// Category Handlers
 func (h *ProductHandler) CreateCategory(c *fiber.Ctx) error {
 	utils.Logger.Println("🔄 [CreateCategory] Start Create Category ")
 	var category domain.Category
@@ -332,5 +375,69 @@ func (h *ProductHandler) GetNewArrivals(c *fiber.Ctx) error {
 		"per_page":     limit,
 		"total_items":  totalItems,
 		"total_pages":  totalPages,
+	})
+}
+
+func (h *ProductHandler) CreateMultipleProductsPro(c *fiber.Ctx) error {
+	form, err := c.MultipartForm()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid multipart form"})
+	}
+
+	names := form.Value["name"]
+	descriptions := form.Value["description"]
+	prices := form.Value["price"]
+	quantities := form.Value["quantity"]
+	categoryIDs := form.Value["category_id"]
+
+	products := []*domain.Product{}
+
+	for i := 0; i < len(names); i++ {
+		categoryID, _ := strconv.Atoi(categoryIDs[i])
+		price, _ := strconv.ParseFloat(prices[i], 64)
+		quantity, _ := strconv.Atoi(quantities[i])
+
+		product := &domain.Product{
+			Name:        names[i],
+			Description: descriptions[i],
+			CategoryID:  uint(categoryID),
+			Price:       price,
+			Quantity:    quantity,
+			Images:      []domain.ProductImage{},
+		}
+
+		uniqueName := uuid.New().String()
+		uploadDir := fmt.Sprintf("./uploads/%d/%s", categoryID, uniqueName)
+		os.MkdirAll(uploadDir, os.ModePerm)
+
+		// ✅ รับภาพเฉพาะจาก key images_{i}
+		key := fmt.Sprintf("images_%d", i)
+		files := form.File[key]
+
+		for _, file := range files {
+			filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), file.Filename)
+			filePath := fmt.Sprintf("%s/%s", uploadDir, filename)
+
+			if err := c.SaveFile(file, filePath); err != nil {
+				log.Println("Save file failed:", err)
+				continue
+			}
+
+			product.Images = append(product.Images, domain.ProductImage{Path: filePath})
+		}
+
+		products = append(products, product)
+	}
+
+	created, skipped, err := h.service.CreateProductsPro(products)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message":          "Products created",
+		"created_count":    len(created),
+		"skipped_count":    len(skipped),
+		"skipped_products": skipped,
 	})
 }

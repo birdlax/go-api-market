@@ -29,27 +29,12 @@ func (r *productRepositoryImpl) GetAllProduct() ([]domain.Product, error) {
 	return products, nil
 }
 
-func (r *productRepositoryImpl) GetProductByID(id uint) (*domain.Product, error) {
-	var product domain.Product
-	if err := r.db.Preload("Images").Preload("Category").First(&product, id).Error; err != nil {
-		return nil, err
-	}
-	return &product, nil
-}
-
 func (r *productRepositoryImpl) GetProductByName(name string) (*domain.Product, error) {
 	var product domain.Product
 	if err := r.db.Where("name = ?", name).First(&product).Error; err != nil {
 		return nil, err
 	}
 	return &product, nil
-}
-
-func (r *productRepositoryImpl) UpdateProduct(product domain.Product) error {
-	if err := r.db.Save(product).Error; err != nil {
-		return err
-	}
-	return nil
 }
 
 func (r *productRepositoryImpl) Delete(id uint) error {
@@ -234,4 +219,83 @@ func (r *productRepositoryImpl) CreateBulkProducts(products []*domain.Product) e
 		}
 	}
 	return nil
+}
+
+func (r *productRepositoryImpl) GetProductByNameAndCategoryIDPro(name string, categoryID uint) (*domain.Product, error) {
+	var product domain.Product
+	err := r.db.Where("name = ? AND category_id = ?", name, categoryID).First(&product).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	return &product, err
+}
+
+func (r *productRepositoryImpl) CreateBulkProductsPro(products []*domain.Product) error {
+	for _, p := range products {
+		if err := r.db.Create(&p).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (r *productRepositoryImpl) GetProductByID(id uint) (*domain.Product, error) {
+	var product domain.Product
+	if err := r.db.Preload("Images").Preload("Category").First(&product, id).Error; err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
+func (r *productRepositoryImpl) UpdateProduct(input *domain.UpdateProductInput) (*domain.Product, error) {
+	var product domain.Product
+
+	// หา product เดิมพร้อม preload ภาพและหมวดหมู่
+	if err := r.db.Preload("Images").Preload("Category").First(&product, input.ID).Error; err != nil {
+		return nil, err
+	}
+
+	// อัปเดตข้อมูลพื้นฐาน
+	product.Name = input.Name
+	product.Description = input.Description
+	product.Price = input.Price
+	product.Quantity = input.Quantity
+	product.CategoryID = input.CategoryID
+
+	// ---- ลบเฉพาะภาพที่ไม่มีใน KeepImagePaths ----
+	if len(input.KeepImagePaths) > 0 {
+		// ลบรูปทั้งหมดที่ไม่อยู่ใน KeepImagePaths
+		if err := r.db.Where("product_id = ? AND path NOT IN ?", product.ID, input.KeepImagePaths).
+			Delete(&domain.ProductImage{}).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// ---- เพิ่มรูปใหม่ ----
+	for _, img := range input.Images {
+		img.ProductID = product.ID
+		if err := r.db.Create(&img).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// บันทึก
+	if err := r.db.Save(&product).Error; err != nil {
+		return nil, err
+	}
+
+	// โหลดใหม่
+	if err := r.db.Preload("Images").Preload("Category").First(&product, product.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return &product, nil
+
+}
+
+func (r *productRepositoryImpl) FindProductByID(id uint, product *domain.Product) error {
+	return r.db.Preload("Images").First(product, id).Error
+}
+
+func (r *productRepositoryImpl) DeleteProductImageByID(imageID uint) error {
+	return r.db.Delete(&domain.ProductImage{}, imageID).Error
 }

@@ -20,6 +20,7 @@ func (r *cartRepositoryImpl) GetCartByUserID(userID uint) (*domain.Cart, error) 
 			return db.Order("created_at ASC") // หรือ "created_at ASC" ถ้ามี timestamp
 		}).
 		Preload("CartItems.Product").
+		Preload("CartItems.Product.Images").
 		Where("user_id = ?", userID).
 		FirstOrCreate(&cart, domain.Cart{UserID: userID}).Error
 

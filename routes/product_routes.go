@@ -15,9 +15,11 @@ func ProductRoutes(app *fiber.App, productHandler *handler.ProductHandler) {
 	app.Get("/filter/category/:category", productHandler.GetProductByCategory)
 	app.Get("/products/new-arrivals", productHandler.GetNewArrivals)
 	app.Get("/categories/filter/:category", productHandler.GetProductByCategory)
+
 	//admin
 	admin := app.Group("/admin", middleware.JWTMiddleware, middleware.AdminOnly)
 	admin.Post("/product/bulk", productHandler.CreateMultipleProducts)
+	admin.Post("/product/bulkpro", productHandler.CreateMultipleProductsPro)
 
 	admin.Get("/products", productHandler.GetAllProducts)
 	admin.Put("/product/:id", productHandler.UpdateProduct)

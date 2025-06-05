@@ -34,6 +34,7 @@ func (r *orderRepositoryImpl) GetOrdersByUserIDAndStatus(userID uint, status str
 	var orders []domain.Order
 
 	query := r.db.Preload("OrderItems.Product").
+		Preload("OrderItems.Product.Images").
 		Where("user_id = ?", userID).
 		Order("created_at DESC")
 
@@ -105,6 +106,7 @@ func (r *orderRepositoryImpl) GetOrderByID(id uint) (*domain.Order, error) {
 			return db.Unscoped()
 		}).
 		Preload("OrderItems.Product").
+		Preload("OrderItems.Product.Images").
 		Preload("Address").
 		First(&order, id).Error; err != nil {
 		return nil, err
