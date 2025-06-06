@@ -73,13 +73,12 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		utils.Logger.Printf("🔥 [Handler] Unexpected error for email %s: %v", req.Email, err)
 		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error"})
 	}
-	isSecureConnection := c.Protocol() == "https"
 	c.Cookie(&fiber.Cookie{
 		Name:     config.JwtCookieName,
 		Value:    user.Token,
 		Expires:  time.Now().Add(time.Hour * 72),
 		HTTPOnly: true,
-		Secure:   isSecureConnection,
+		Secure:   false,
 		SameSite: "Lax",
 		Path:     "/",
 	})
