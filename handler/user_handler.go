@@ -78,8 +78,8 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		Value:    user.Token,
 		Expires:  time.Now().Add(time.Hour * 72),
 		HTTPOnly: true,
-		Secure:   true, // <--- **ต้องเป็น true**
-		SameSite: "None",
+		Secure:   false,
+		SameSite: "Lax",
 		Path:     "/",
 	})
 
