@@ -7,8 +7,9 @@ import (
 )
 
 func CartRoutes(app *fiber.App, cartHandler *handler.CartHandler) {
-	app.Get("/cart", cartHandler.GetCart) // <--- แก้จาก "/cart" เป็น "/"
+	// <--- แก้จาก "/cart" เป็น "/"
 	app.Use(middleware.CORSMiddleware())
+	app.Get("/cart", cartHandler.GetCart)
 	cart := app.Group("/cart", middleware.JWTMiddleware)
 	cart.Post("/item", cartHandler.AddItem)
 	cart.Delete("/items/:product_id", cartHandler.RemoveItem)
