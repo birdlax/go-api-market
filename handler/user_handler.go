@@ -312,5 +312,5 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) GetHello(c *fiber.Ctx) error {
-	return c.SendString("Hello, เพิ่ม log jwt รอบ 3!")
+	return c.SendString("Hello, backup-code-2025-06-06!")
 }

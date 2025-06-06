@@ -3,7 +3,7 @@ name: Deploy to VM with Docker Compose
 on:
   push:
     branches:
-      - master   # หรือ master แล้วแต่ชื่อ branch ของคุณ
+      - backup-code-2025-06-06   # หรือ master แล้วแต่ชื่อ branch ของคุณ
 
 jobs:
   deploy:
