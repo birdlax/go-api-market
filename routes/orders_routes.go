@@ -8,13 +8,12 @@ import (
 
 func OrderRoutes(app *fiber.App, orderHandler *handler.OrderHandler) {
 	app.Use(middleware.CORSMiddleware())
-
-	app.Use(middleware.JWTMiddleware)
-	app.Get("/order/:id", orderHandler.GetOrderByID)
-	app.Get("/order", orderHandler.GetOrder)
-	app.Get("/orderalls", orderHandler.GetOrdersByStatus)
-	app.Put("/pay", orderHandler.MarkOrderAsPaid)
-	app.Put("/orders/cancel", orderHandler.CancelOrder)
+	user := app.Group("/order", middleware.JWTMiddleware, middleware.AdminOnly)
+	user.Get("/:id", orderHandler.GetOrderByID)
+	user.Get("/", orderHandler.GetOrder)
+	user.Get("/orderalls", orderHandler.GetOrdersByStatus)
+	user.Put("/pay", orderHandler.MarkOrderAsPaid)
+	user.Put("/cancel", orderHandler.CancelOrder)
 
 	//admin
 	admin := app.Group("/admin", middleware.JWTMiddleware, middleware.AdminOnly)

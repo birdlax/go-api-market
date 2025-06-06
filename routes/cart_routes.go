@@ -7,8 +7,6 @@ import (
 )
 
 func CartRoutes(app *fiber.App, cartHandler *handler.CartHandler) {
-	app.Use(middleware.CORSMiddleware())
-
 	cart := app.Group("/cart", middleware.JWTMiddleware)
 
 	// นิยาม Route ภายใต้ Group นี้

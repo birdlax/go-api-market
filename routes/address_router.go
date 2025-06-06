@@ -8,9 +8,7 @@ import (
 
 func AddressRouter(app *fiber.App, addressHandler *handler.AddressHandler) {
 	app.Use(middleware.CORSMiddleware())
-	app.Use(middleware.JWTMiddleware)
-
-	addressGroup := app.Group("/api/addresses")
+	addressGroup := app.Group("/api/addresses", middleware.JWTMiddleware)
 	addressGroup.Post("/", addressHandler.CreateAddress)
 	addressGroup.Get("/", addressHandler.GetAddresses)
 	addressGroup.Get("/:id", addressHandler.GetAddressByID)
