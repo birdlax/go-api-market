@@ -6,7 +6,7 @@ import (
 )
 
 func CORSMiddleware() fiber.Handler {
-	ipv6Origin := "http://[223.206.229.144]"
+	ipv6Origin := "http://223.206.229.144"
 	return cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:5173," + ipv6Origin,
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
