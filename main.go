@@ -3,7 +3,6 @@ package main
 import (
 	"backend/config"
 	"backend/handler"
-	"backend/middleware"
 	"backend/repository"
 	"backend/routes"
 	"backend/service"
@@ -16,7 +15,6 @@ func main() {
 
 	app.Static("/uploads", "./uploads") // ให้ URL /uploads/... เข้าได้
 	config.ConnectDatabase()
-	app.Use(middleware.CORSMiddleware())
 	utils.InitLogger()
 
 	userRepo := repository.NewUserRepository(config.DB)

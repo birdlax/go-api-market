@@ -7,7 +7,6 @@ import (
 )
 
 func OrderRoutes(app *fiber.App, orderHandler *handler.OrderHandler) {
-	app.Use(middleware.CORSMiddleware())
 	user := app.Group("/order", middleware.JWTMiddleware)
 	user.Get("/:id", orderHandler.GetOrderByID)
 	user.Get("/", orderHandler.GetOrder)

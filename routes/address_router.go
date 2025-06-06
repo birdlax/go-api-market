@@ -7,6 +7,7 @@ import (
 )
 
 func AddressRouter(app *fiber.App, addressHandler *handler.AddressHandler) {
+	app.Use(middleware.CORSMiddleware())
 	addressGroup := app.Group("/api/addresses", middleware.JWTMiddleware)
 	addressGroup.Post("/", addressHandler.CreateAddress)
 	addressGroup.Get("/", addressHandler.GetAddresses)
