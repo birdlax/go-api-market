@@ -24,7 +24,7 @@ jobs:
         ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
           echo "Pulling the latest code from Git"
           cd ~/go-api-market || exit 1
-          git pull origin master || exit 1
+          git pull origin backup-code-2025-06-06 || exit 1
           echo "Bringing down the containers"
           sudo docker compose down || exit 1
           echo "Building and restarting the containers"
