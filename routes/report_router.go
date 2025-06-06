@@ -7,7 +7,6 @@ import (
 )
 
 func ReportRoutes(app *fiber.App, reportHandler *handler.ReportHandler) {
-	app.Use(middleware.CORSMiddleware())
 	report := app.Group("/admin/reports", middleware.JWTMiddleware, middleware.AdminOnly)
 	report.Get("/revenue", reportHandler.GetRevenueReport)
 	report.Get("/dashboard-summary", reportHandler.GetDashboardSummary)

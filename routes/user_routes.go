@@ -7,7 +7,6 @@ import (
 )
 
 func UserRoutes(app *fiber.App, userHandler *handler.UserHandler) {
-	app.Use(middleware.CORSMiddleware())
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
 	app.Post("/logout", userHandler.Logout)

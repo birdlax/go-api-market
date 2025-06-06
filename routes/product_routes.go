@@ -7,7 +7,6 @@ import (
 )
 
 func ProductRoutes(app *fiber.App, productHandler *handler.ProductHandler) {
-	app.Use(middleware.CORSMiddleware())
 	app.Get("/products", productHandler.GetAllProducts)
 	app.Get("/product/:id", productHandler.GetProductByID)
 	app.Get("/categories", productHandler.GetAllCategories)
