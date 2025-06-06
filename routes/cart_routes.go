@@ -8,11 +8,15 @@ import (
 
 func CartRoutes(app *fiber.App, cartHandler *handler.CartHandler) {
 	app.Use(middleware.CORSMiddleware())
-	app.Use(middleware.JWTMiddleware)
-	app.Post("/cart/item", cartHandler.AddItem)
-	app.Delete("/cart/items/:product_id", cartHandler.RemoveItem)
-	app.Get("/cart", cartHandler.GetCart)
-	app.Post("/cart/checkout", cartHandler.Checkout)
-	app.Delete("/cart/itemx/:product_id", cartHandler.RemoveItemOne)
-	app.Post("/cart/item/:product_id", cartHandler.AddOneItem)
+
+	cart := app.Group("/cart", middleware.JWTMiddleware)
+
+	// นิยาม Route ภายใต้ Group นี้
+	// สังเกตว่า path จะเป็น "/" แทน "/cart" เพราะเราอยู่ใน group "/cart" แล้ว
+	cart.Post("/item", cartHandler.AddItem)
+	cart.Delete("/items/:product_id", cartHandler.RemoveItem)
+	cart.Get("/", cartHandler.GetCart) // <--- แก้จาก "/cart" เป็น "/"
+	cart.Post("/checkout", cartHandler.Checkout)
+	cart.Delete("/itemx/:product_id", cartHandler.RemoveItemOne)
+	cart.Post("/item/:product_id", cartHandler.AddOneItem)
 }
