@@ -8,9 +8,6 @@ import (
 
 func CartRoutes(app *fiber.App, cartHandler *handler.CartHandler) {
 	cart := app.Group("/cart", middleware.JWTMiddleware)
-
-	// นิยาม Route ภายใต้ Group นี้
-	// สังเกตว่า path จะเป็น "/" แทน "/cart" เพราะเราอยู่ใน group "/cart" แล้ว
 	cart.Post("/item", cartHandler.AddItem)
 	cart.Delete("/items/:product_id", cartHandler.RemoveItem)
 	cart.Get("/", cartHandler.GetCart) // <--- แก้จาก "/cart" เป็น "/"
