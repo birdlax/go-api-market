@@ -8,10 +8,10 @@ import (
 
 func OrderRoutes(app *fiber.App, orderHandler *handler.OrderHandler) {
 	app.Use(middleware.CORSMiddleware())
-	user := app.Group("/order", middleware.JWTMiddleware, middleware.AdminOnly)
+	user := app.Group("/order", middleware.JWTMiddleware)
 	user.Get("/:id", orderHandler.GetOrderByID)
 	user.Get("/", orderHandler.GetOrder)
-	user.Get("/orderalls", orderHandler.GetOrdersByStatus)
+	user.Get("/show/orderalls", orderHandler.GetOrdersByStatus)
 	user.Put("/pay", orderHandler.MarkOrderAsPaid)
 	user.Put("/cancel", orderHandler.CancelOrder)
 
