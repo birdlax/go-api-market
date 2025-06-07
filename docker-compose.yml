@@ -44,6 +44,8 @@ services:
       EMAIL_PASSWORD: aqio nbmf kdwv wkeu
     depends_on:
       - postgres
+    volumes:
+      - uploads_data:/root/uploads
     restart: unless-stopped
 
 volumes:
