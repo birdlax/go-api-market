@@ -9,10 +9,11 @@ import (
 func CartRoutes(app *fiber.App, cartHandler *handler.CartHandler) {
 	app.Use(middleware.CORSMiddleware())
 	app.Use(middleware.JWTMiddleware)
-	app.Post("/cart/item", cartHandler.AddItem)
-	app.Delete("/cart/items/:product_id", cartHandler.RemoveItem)
-	app.Get("/cart", cartHandler.GetCart)
-	app.Post("/cart/checkout", cartHandler.Checkout)
-	app.Delete("/cart/itemx/:product_id", cartHandler.RemoveItemOne)
-	app.Post("/cart/item/:product_id", cartHandler.AddOneItem)
+	api := app.Group("/api")
+	api.Post("/cart/item", cartHandler.AddItem)
+	api.Delete("/cart/items/:product_id", cartHandler.RemoveItem)
+	api.Get("/cart", cartHandler.GetCart)
+	api.Post("/cart/checkout", cartHandler.Checkout)
+	api.Delete("/cart/itemx/:product_id", cartHandler.RemoveItemOne)
+	api.Post("/cart/item/:product_id", cartHandler.AddOneItem)
 }
