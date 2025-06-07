@@ -9,7 +9,6 @@ services:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
     volumes:
-      - ./uploads:/root/uploads
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
@@ -45,7 +44,10 @@ services:
       EMAIL_PASSWORD: aqio nbmf kdwv wkeu
     depends_on:
       - postgres
+    volumes:
+    - /home/birdlax/go-api-market/go-uploads:/root/uploads
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-
+  uploads_data:
