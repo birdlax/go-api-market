@@ -313,5 +313,5 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) GetHello(c *fiber.Ctx) error {
-	return c.SendString("Hello, Test Nginx 10!")
+	return c.SendString("Hello, Test Nginx infinity!")
 }
